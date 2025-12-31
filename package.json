@@ -1,0 +1,20 @@
+
+{
+  "name": "fitlog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade frontend fitness app — MFE architecture, design tokens, web components, TDD, and modern practices.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "echo 'Use: npm run dev -w apps/shell'",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "keywords": ["mfe", "micro-frontend", "fitness", "react", "vite"],
+  "author": "Venkatesh Mukundan",
+  "license": "MIT"
+}
