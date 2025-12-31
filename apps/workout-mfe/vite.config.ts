@@ -6,15 +6,18 @@ export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: 'shell',
-      remotes: {
-        workout: 'http://localhost:3001/assets/remoteEntry.js',
+      name: 'workout',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './App': './src/App.tsx',
       },
       shared: ['react', 'react-dom', 'react-router-dom'],
     }),
   ],
+  server: {
+    port: 3001,
+  },
   build: {
-    modulePreload: false,
     target: 'esnext',
     minify: false,
     cssCodeSplit: false,
