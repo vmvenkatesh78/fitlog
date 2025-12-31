@@ -140,10 +140,10 @@ formatCalories(1500);       // "1,500 cal"
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design and how everything fits together |
-| [DECISIONS.md](docs/DECISIONS.md) | Architecture Decision Records (ADRs) |
-| [COMPLETE_GUIDE.md](docs/COMPLETE_GUIDE.md) | Beginner-friendly guide to every file |
-| [LEARNING_JOURNEY.md](docs/LEARNING_JOURNEY.md) | Questions, problems, and solutions |
+| [ARCHITECTURE.md](docs/Architecture.md) | System design and how everything fits together |
+| [DECISIONS.md](docs/Decisionss.md) | Architecture Decision Records (ADRs) |
+| [COMPLETE_GUIDE.md](docs/CompleteGuide.md) | Beginner-friendly guide to every file |
+| [LEARNING_JOURNEY.md](docs/LearningJourney.md) | Questions, problems, and solutions |
 
 ## 🗺️ Roadmap
 
