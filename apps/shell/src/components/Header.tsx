@@ -14,7 +14,7 @@ function Header() {
   return (
     <header className="header">
       <div className="header-brand">
-        <Link to="/">🏋️ FitLog</Link>
+        <Link to="/home">🏋️ FitLog</Link>
       </div>
       <nav className="header-nav">
         <Link to="/workout" className={isActive('/workout') ? 'active' : ''}>
@@ -33,7 +33,7 @@ function Header() {
       <div className="header-user">
         <User size={18} />
         <span>{user.name}</span>
-        <button 
+        <button
           className="theme-toggle"
           onClick={() => dispatch(toggleTheme())}
           title={`Switch to ${preferences.theme === 'light' ? 'dark' : 'light'} mode`}

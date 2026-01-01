@@ -1,11 +1,11 @@
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from './store';
 import Header from './components/Header';
 
-// Lazy load the remote MFE
 const WorkoutApp = React.lazy(() => import('workout/App'));
+const FoodApp = React.lazy(() => import('food/App'));
 
 function App() {
   const preferences = useSelector((state: RootState) => state.preferences);
@@ -15,7 +15,8 @@ function App() {
       <Header />
       <main className="main">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<Home />} />
           <Route
             path="/workout/*"
             element={
@@ -24,7 +25,14 @@ function App() {
               </Suspense>
             }
           />
-          <Route path="/food/*" element={<div>Food MFE will load here</div>} />
+          <Route
+            path="/food/*"
+            element={
+              <Suspense fallback={<div className="loading">Loading Food...</div>}>
+                <FoodApp />
+              </Suspense>
+            }
+          />
           <Route path="/analytics/*" element={<div>Analytics MFE will load here</div>} />
         </Routes>
       </main>

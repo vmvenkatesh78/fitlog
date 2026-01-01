@@ -9,6 +9,7 @@ export default defineConfig({
       name: 'shell',
       remotes: {
         workout: 'http://localhost:3001/assets/remoteEntry.js',
+        food: 'http://localhost:3002/assets/remoteEntry.js',
       },
       shared: ['react', 'react-dom', 'react-router-dom'],
     }),
