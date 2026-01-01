@@ -6,6 +6,7 @@ import Header from './components/Header';
 
 const WorkoutApp = React.lazy(() => import('workout/App'));
 const FoodApp = React.lazy(() => import('food/App'));
+const AnalyticsApp = React.lazy(() => import('analytics/App'));
 
 function App() {
   const preferences = useSelector((state: RootState) => state.preferences);
@@ -33,7 +34,14 @@ function App() {
               </Suspense>
             }
           />
-          <Route path="/analytics/*" element={<div>Analytics MFE will load here</div>} />
+          <Route
+            path="/analytics/*"
+            element={
+              <Suspense fallback={<div className="loading">Loading Analytics...</div>}>
+                <AnalyticsApp />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
     </div>

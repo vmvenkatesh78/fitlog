@@ -10,6 +10,7 @@ export default defineConfig({
       remotes: {
         workout: 'http://localhost:3001/assets/remoteEntry.js',
         food: 'http://localhost:3002/assets/remoteEntry.js',
+        analytics: 'http://localhost:3003/assets/remoteEntry.js',
       },
       shared: ['react', 'react-dom', 'react-router-dom'],
     }),
