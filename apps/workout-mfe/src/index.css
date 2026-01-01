@@ -29,8 +29,38 @@
   font-weight: normal;
 }
 
-.workout-stats {
+.workout-calories {
   font-size: 0.875rem;
-  color: #64748b;
+  color: #f97316;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.empty-state {
+  color: #94a3b8;
+  text-align: center;
+  padding: 2rem;
+}
+
+.workout-form-card {
+  margin-bottom: 1.5rem;
+}
+
+.workout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
   margin-top: 0.5rem;
 }
