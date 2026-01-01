@@ -144,6 +144,7 @@ formatCalories(1500);       // "1,500 cal"
 | [DECISIONS.md](docs/Decisionss.md) | Architecture Decision Records (ADRs) |
 | [COMPLETE_GUIDE.md](docs/CompleteGuide.md) | Beginner-friendly guide to every file |
 | [LEARNING_JOURNEY.md](docs/LearningJourney.md) | Questions, problems, and solutions |
+| [MFE Communication.md](docs/Communication.md) | Explains MFE communication |
 
 ## 🗺️ Roadmap
 
