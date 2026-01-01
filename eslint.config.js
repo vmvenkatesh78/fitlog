@@ -14,10 +14,18 @@ export default [
         sourceType: 'module',
       },
       globals: {
+        // Browser globals
         window: 'readonly',
         document: 'readonly',
         localStorage: 'readonly',
         console: 'readonly',
+        // DOM types
+        HTMLButtonElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        SVGSVGElement: 'readonly',
+        CustomEvent: 'readonly',
+        Event: 'readonly',
+        // React
         React: 'readonly',
       },
     },
