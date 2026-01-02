@@ -3,7 +3,7 @@
 ## A Detailed Record of Building This Project - Questions Asked, Problems Faced, Solutions Found
 
 **Author:** Venkatesh Mukundan  
-**Date:** December 31, 2024  
+**Started:** December 31, 2025  
 **Purpose:** Document the actual learning process, including confusion, mistakes, and "aha" moments
 
 ---
@@ -12,11 +12,12 @@
 
 1. [The Beginning - Why This Project?](#1-the-beginning---why-this-project)
 2. [Day 1 Journey - Step by Step](#2-day-1-journey---step-by-step)
-3. [Questions Asked During Development](#3-questions-asked-during-development)
-4. [Problems We Encountered](#4-problems-we-encountered)
-5. [Key Learning Moments](#5-key-learning-moments)
-6. [Things That Confused Me](#6-things-that-confused-me)
-7. [Decisions and Their Reasoning](#7-decisions-and-their-reasoning)
+3. [Day 2 Journey - MFE Communication](#3-day-2-journey---mfe-communication)
+4. [Questions Asked During Development](#4-questions-asked-during-development)
+5. [Problems We Encountered](#5-problems-we-encountered)
+6. [Key Learning Moments](#6-key-learning-moments)
+7. [Things That Confused Me](#7-things-that-confused-me)
+8. [Decisions and Their Reasoning](#8-decisions-and-their-reasoning)
 
 ---
 
@@ -360,9 +361,123 @@ Shell runs in dev mode. When you visit `/workout`:
 
 ---
 
-## 3. Questions Asked During Development
+## 3. Day 2 Journey - MFE Communication
 
-### Architecture Questions
+### The Focus
+
+Day 2 was about **depth over breadth**. Instead of spinning up empty MFEs, we focused on proving one real interaction:
+
+> "A workout logged in one MFE updates analytics in another MFE without shared state."
+
+---
+
+### Step 1: Food MFE
+
+**What we did:**
+- Created Food MFE on port 3002
+- Minimal UI with calorie display placeholder
+- Integrated with Shell via Module Federation
+
+**No questions here** - we had the pattern from Workout MFE.
+
+---
+
+### Step 2: Analytics MFE
+
+**What we did:**
+- Created Analytics MFE on port 3003
+- Added workout counter that reads from localStorage
+- Set up event listener for real-time updates
+
+**Key code:**
+```typescript
+// Listen for events from Workout MFE
+useEffect(() => {
+  const cleanup = on(Events.WORKOUT_LOGGED, () => {
+    setWorkoutCount((prev) => prev + 1);
+  });
+  return cleanup;
+}, []);
+```
+
+---
+
+### Step 3: Cross-MFE Communication (THE REAL WIN)
+
+**Question I asked:** "I added a workout and it works but analytics is not updated?"
+
+**The Problem:**
+Events are fire-and-forget. When you:
+1. Go to `/workout` → Analytics unmounts
+2. Log workout → Event emits
+3. Go to `/analytics` → Analytics mounts fresh (missed the event!)
+
+**The Solution:** Persist to localStorage + event bus for real-time.
+
+```typescript
+// Workout MFE - Save to localStorage
+localStorage.setItem('fitlog-workouts', JSON.stringify(workouts));
+
+// Analytics MFE - Read on mount
+const saved = localStorage.getItem('fitlog-workouts');
+const count = saved ? JSON.parse(saved).length : 0;
+```
+
+**Learning:** Events alone aren't enough. You need persistence for data that survives navigation.
+
+---
+
+### Step 4: localStorage Timestamp Bug
+
+**Error:** `workout.timestamp.toLocaleTimeString is not a function`
+
+**What happened:**
+- Saved workout to localStorage with `timestamp: new Date()`
+- JSON.stringify converts Date to string
+- JSON.parse returns string, not Date object
+- `.toLocaleTimeString()` fails on string
+
+**Fix:**
+```typescript
+// Convert timestamps back to Date objects when loading
+const workouts = JSON.parse(saved).map((w) => ({
+  ...w,
+  timestamp: new Date(w.timestamp),
+}));
+```
+
+**Learning:** JSON doesn't preserve types. Always convert dates after parsing.
+
+---
+
+### Step 5: ESLint Setup
+
+**Problem:** CI failed - ESLint 9 needs flat config.
+
+**Error:** `ESLint couldn't find an eslint.config.js file`
+
+**Fix:** Created `eslint.config.js` with:
+- TypeScript parser
+- React hooks plugin
+- DOM globals (window, localStorage, CustomEvent, etc.)
+
+**Learning:** ESLint 9 changed config format completely. Old `.eslintrc` doesn't work.
+
+---
+
+### Step 6: Calories Field Question
+
+**Question I asked:** "Why calories when adding a workout?"
+
+**My realization:** Users don't know how many calories they burned. This should be calculated or fetched from an API, not manually entered.
+
+**Decision:** Removed calories from form for now. Can add smart calculation later.
+
+---
+
+## 4. Questions Asked During Development
+
+### Day 1 Questions
 
 | Question | Answer |
 |----------|--------|
@@ -370,28 +485,29 @@ Shell runs in dev mode. When you visit `/workout`:
 | "Monorepo or polyrepo for Workhall?" | Monorepo is fine for 25 devs |
 | "How does deployment work with monorepo?" | Path-based CI triggers separate deploys |
 | "Is this true MFE?" | Not yet - we needed Module Federation working |
-
-### Code Questions
-
-| Question | Answer |
-|----------|--------|
 | "Why is Settings icon imported but unused?" | Good catch! Either remove or use it |
 | "Do I change main.tsx every time when developing?" | No, main.tsx is for standalone, App.tsx is exposed |
 | "Why do we need remotes.d.ts?" | TypeScript doesn't know runtime modules exist |
-
-### Problem-Solving Questions
-
-| Question | Answer |
-|----------|--------|
 | "Why isn't theme toggle working?" | State stored but not applied to UI |
 | "Why can't Shell find workout/App?" | remoteEntry.js only exists after build |
 | "I don't want guess solutions, explain the actual problem" | Vite dev mode doesn't bundle = no remoteEntry.js |
 
+### Day 2 Questions
+
+| Question | Answer |
+|----------|--------|
+| "Analytics not updating after workout?" | Events are fire-and-forget, need localStorage |
+| "Why calories in workout form?" | Removed - users don't know this |
+| "Timestamp error on reload?" | JSON.parse returns strings, convert to Date |
+| "ESLint failing in CI?" | ESLint 9 needs new flat config format |
+
 ---
 
-## 4. Problems We Encountered
+## 5. Problems We Encountered
 
-### Problem 1: Vulnerability Warnings
+### Day 1 Problems
+
+#### Problem 1: Vulnerability Warnings
 
 **Issue:**
 ```
@@ -405,15 +521,9 @@ Shell runs in dev mode. When you visit `/workout`:
 "vite": "^7.0.0"
 ```
 
-**Verification:**
-```bash
-npm audit
-# 0 vulnerabilities
-```
-
 ---
 
-### Problem 2: Router Context Error
+#### Problem 2: Router Context Error
 
 **Error:**
 ```
@@ -422,17 +532,11 @@ useRoutes() may be used only in the context of a <Router> component
 
 **Cause:** Workout MFE's App.tsx uses Routes, but no BrowserRouter wraps it.
 
-**Solution:** Add BrowserRouter in main.tsx (standalone entry):
-```typescript
-// main.tsx
-<BrowserRouter>
-  <App />
-</BrowserRouter>
-```
+**Solution:** Add BrowserRouter in main.tsx (standalone entry).
 
 ---
 
-### Problem 3: Module Federation Import Error
+#### Problem 3: Module Federation Import Error
 
 **Error:**
 ```
@@ -441,50 +545,54 @@ Failed to resolve import "workout/App"
 
 **Cause:** Vite dev mode doesn't create remoteEntry.js
 
-**Solution:** Use build + preview for MFEs:
-```bash
-npm run build -w apps/workout-mfe && npm run preview -w apps/workout-mfe
-```
+**Solution:** Use build + preview for MFEs.
 
 ---
 
-### Problem 4: Active Nav Link Not Styled
+#### Problem 4: Active Nav Link Not Styled
 
 **Issue:** Clicking navigation links worked but didn't show which page you're on.
 
-**Solution:** Added active state using useLocation:
+**Solution:** Added active state using useLocation.
+
+---
+
+### Day 2 Problems
+
+#### Problem 5: Events Lost Between MFEs
+
+**Issue:** Logging workout, then navigating to Analytics showed 0 workouts.
+
+**Cause:** Events fire-and-forget; Analytics wasn't mounted when event fired.
+
+**Solution:** Combine event bus (real-time) + localStorage (persistence).
+
+---
+
+#### Problem 6: localStorage Timestamp Error
+
+**Error:** `workout.timestamp.toLocaleTimeString is not a function`
+
+**Cause:** JSON.stringify converts Date to string; JSON.parse doesn't convert back.
+
+**Solution:** Convert timestamps after parsing:
 ```typescript
-const location = useLocation();
-const isActive = (path) => location.pathname.startsWith(path);
-
-<Link className={isActive('/workout') ? 'active' : ''}>
-```
-
-And CSS:
-```css
-.header-nav a.active {
-  background: rgba(255, 255, 255, 0.2);
-}
+timestamp: new Date(w.timestamp)
 ```
 
 ---
 
-### Problem 5: Alignment Issues with Icons
+#### Problem 7: ESLint 9 CI Failure
 
-**Issue:** Icons in header not aligned with text.
+**Error:** `ESLint couldn't find an eslint.config.js file`
 
-**Solution:** Flexbox alignment:
-```css
-.header-nav a {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-```
+**Cause:** ESLint 9 requires new flat config format.
+
+**Solution:** Created `eslint.config.js` with proper globals.
 
 ---
 
-## 5. Key Learning Moments
+## 6. Key Learning Moments
 
 ### Learning 1: Module Federation is a RUNTIME Feature
 
@@ -492,30 +600,17 @@ And CSS:
 TRADITIONAL IMPORTS:
 import Button from './Button';
 // Bundled at BUILD time
-// Button code is in your bundle
 
 MODULE FEDERATION:
 import('workout/App');
-// Loaded at RUNTIME
-// Code fetched from different server!
+// Loaded at RUNTIME from different server!
 ```
-
-This is why remoteEntry.js is crucial - it's the "manifest" that tells the host what's available and where to find it.
 
 ---
 
 ### Learning 2: State Should Affect UI
 
-Having state is pointless if nothing changes:
-
-```typescript
-// WRONG: State exists but UI doesn't react
-const [theme, setTheme] = useState('light');
-// No className based on theme...
-
-// RIGHT: State changes UI
-<div className={`theme-${theme}`}>
-```
+Having state is pointless if nothing changes visually.
 
 ---
 
@@ -525,160 +620,91 @@ const [theme, setTheme] = useState('light');
 DEVELOPMENT:
 ├── Shell: dev mode (fast HMR)
 ├── MFEs: build + preview (need remoteEntry.js)
-└── Two terminals required
 
 PRODUCTION:
 ├── Everything built
-├── Deployed to CDN/Vercel
-└── remoteEntry.js URLs point to production
+├── remoteEntry.js URLs point to production CDN
 ```
 
 ---
 
-### Learning 4: Shared Dependencies Are Critical
-
-Without shared:
-```
-Shell: Loads React (500KB)
-Workout: Loads React (500KB)
-Total: 1MB
-
-With shared:
-Shell: Loads React (500KB)
-Workout: Reuses Shell's React
-Total: 500KB
-```
-
-The `shared` array in vite.config.ts prevents duplicate loading.
-
----
-
-### Learning 5: Monorepo ≠ Monolithic Deployment
+### Learning 4: Events + Persistence = Robust Communication
 
 ```
-MONOREPO:
-├── Single repository
-├── Shared code is easy
-├── Atomic commits
-└── BUT...
-
-DEPLOYMENT:
-├── Each app deploys separately
-├── Path-based CI triggers
-├── Independent scaling
-└── NOT monolithic!
+Event Bus alone:     Events lost if listener not mounted
+localStorage alone:  No real-time updates
+Both together:       Data persists AND real-time works
 ```
 
 ---
 
-## 6. Things That Confused Me
+### Learning 5: JSON Loses Types
+
+```typescript
+// Date becomes string after JSON round-trip
+JSON.parse(JSON.stringify(new Date())) // "2026-01-01T..."
+
+// Must convert back manually
+new Date(parsed.timestamp)
+```
+
+---
+
+## 7. Things That Confused Me
 
 ### Confusion 1: Why BrowserRouter in main.tsx but not App.tsx?
 
-**Initial thought:** "Won't there be two routers?"
-
-**Reality:**
-- `main.tsx` runs ONLY when loading MFE standalone
-- When Shell loads MFE, it imports `App.tsx` directly
-- Shell already has BrowserRouter
-- So no double router!
+**Reality:** main.tsx only runs standalone; Shell provides router when loading App.tsx.
 
 ---
 
 ### Confusion 2: Why build + preview instead of dev?
 
-**Initial thought:** "Dev mode should work, something is broken."
-
-**Reality:** It's not broken - it's a fundamental limitation:
-- Dev mode serves raw files (no bundling)
-- Module Federation needs bundled output
-- remoteEntry.js is a BUILD artifact
+**Reality:** Vite dev mode doesn't bundle = no remoteEntry.js = Module Federation fails.
 
 ---
 
-### Confusion 3: What exactly is remoteEntry.js?
+### Confusion 3: Why events didn't update Analytics?
 
-**Initial thought:** "It's the MFE code."
-
-**Reality:** It's a manifest file that says:
-```javascript
-// Simplified concept
-{
-  "./App": {
-    importPath: "./src/App.tsx",
-    dependencies: ["react", "react-dom"],
-    loadFunction: () => import("./actual-app-code.js")
-  }
-}
-```
-
-The actual code is in separate chunks.
+**Reality:** Events are instant; if no one's listening, they're lost forever.
 
 ---
 
-### Confusion 4: Why @fitlog/ui instead of just 'ui'?
+## 8. Decisions and Their Reasoning
 
-**Initial thought:** "Just 'ui' is simpler."
+### Decision: Use Plain CSS
 
-**Reality:** Scoped packages (@fitlog/ui):
-- Namespace prevents conflicts
-- Clear ownership
-- Same pattern as @angular/, @babel/, @types/
-- Professional convention
-
----
-
-## 7. Decisions and Their Reasoning
-
-### Decision: Use Plain CSS (Not Tailwind/CSS-in-JS)
-
-**Reasoning:**
-- Zero runtime overhead
-- No complex build setup
-- Easy to understand
-- Design Tokens planned for Week 5-6
-
-**Trade-off accepted:** Manual class naming, no automatic scoping.
+**Reasoning:** Zero runtime overhead, simple, Design Tokens planned for Week 5-6.
 
 ---
 
 ### Decision: Minimal Redux (Only 3 Slices)
 
-**Reasoning:**
-- MFEs should be independent
-- Local state for features
-- Global state for truly global things (auth, user, prefs)
-
-**Trade-off accepted:** Can't easily share feature state.
+**Reasoning:** MFEs should be independent; local state for features.
 
 ---
 
 ### Decision: DOM Events for Communication
 
-**Reasoning:**
-- Zero dependencies
-- Built into browser
-- Simple to understand
-- Can add complexity later if needed
-
-**Trade-off accepted:** Manual TypeScript types, cleanup needed.
+**Reasoning:** Zero dependencies, built into browser, simple to understand.
 
 ---
 
-### Decision: Vite over Webpack
+### Decision: Event Bus + localStorage
 
-**Reasoning:**
-- Much faster dev server
-- Simpler configuration
-- Modern defaults
-- Good enough MFE support
-
-**Trade-off accepted:** Build+preview workflow for MFE development.
+**Reasoning:** Events for real-time, localStorage for persistence across navigation.
 
 ---
 
-## Summary: What We Built Today
+### Decision: Remove Calories from Form
 
+**Reasoning:** Users don't know calories burned; calculate or fetch later.
+
+---
+
+## Summary
+
+### Day 1 Built
 ```
 ✅ GitHub repo with proper structure
 ✅ Monorepo with npm workspaces
@@ -689,41 +715,31 @@ The actual code is in separate chunks.
 ✅ @fitlog/utils (eventBus, formatters)
 ✅ Workout MFE
 ✅ Module Federation working!
-✅ Documentation
 ```
 
-## What's Next
-
+### Day 2 Built
 ```
-Week 1 remaining:
-├── Food MFE
-├── Analytics MFE
-├── Event bus communication between MFEs
-└── More workout features
-
-Week 2+:
-├── Design Tokens
-├── Web Components
-├── TDD
-├── MCP
-└── Lighthouse optimization
+✅ Food MFE (port 3002)
+✅ Analytics MFE (port 3003)
+✅ Cross-MFE event communication
+✅ localStorage persistence
+✅ Workout form with logging
+✅ ESLint 9 configuration
+✅ COMMUNICATION.md documentation
 ```
+
+### The Key Achievement
+
+> "A workout logged in one MFE updates analytics in another MFE without shared state."
 
 ---
 
 ## Final Thoughts
 
-The biggest lesson from Day 1: **Understanding WHY is more important than making it work.**
+The biggest lessons:
 
-When Module Federation failed, we could have just searched for a fix. Instead, we understood:
-1. How Vite dev mode works (no bundling)
-2. What remoteEntry.js is (manifest file)
-3. Why build is required (creates the manifest)
-
-This understanding will help when:
-- Debugging production issues
-- Explaining to teammates
-- Making architecture decisions
+1. **Events alone aren't enough - add persistence**
+2. **JSON loses types - always convert dates**
 
 **Keep asking questions. Keep understanding why.**
 

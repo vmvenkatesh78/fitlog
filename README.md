@@ -7,6 +7,7 @@ A production-grade fitness tracking app built with **Micro Frontend architecture
 FitLog is a learning project that implements real-world MFE architecture patterns used by companies like Amazon, IKEA, and Spotify. It's designed to be a reference for developers wanting to understand how to build scalable frontend applications.
 
 ## 🏗️ Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                        SHELL                            │
@@ -17,7 +18,6 @@ FitLog is a learning project that implements real-world MFE architecture pattern
 ├───────────────┬───────────────┬─────────────────────────┤
 │  Workout MFE  │   Food MFE    │    Analytics MFE        │
 │  (Port 3001)  │  (Port 3002)  │     (Port 3003)         │
-│               │   (planned)   │      (planned)          │
 └───────────────┴───────────────┴─────────────────────────┘
           │               │               │
           └───────────────┴───────────────┘
@@ -43,17 +43,18 @@ FitLog is a learning project that implements real-world MFE architecture pattern
 | Monorepo | npm workspaces |
 
 ## 📁 Project Structure
+
 ```
 fitlog/
 ├── apps/
 │   ├── shell/              # Host application
 │   ├── workout-mfe/        # Workout micro frontend
-│   ├── food-mfe/           # Food tracking (planned)
-│   └── analytics-mfe/      # Analytics dashboard (planned)
+│   ├── food-mfe/           # Food tracking micro frontend
+│   └── analytics-mfe/      # Analytics dashboard micro frontend
 ├── packages/
 │   ├── ui/                 # Shared UI components
 │   ├── icons/              # Shared icon components
-│   └── utils/              # Shared utilities
+│   └── utils/              # Shared utilities (event bus, formatters)
 ├── docs/                   # Documentation
 └── package.json            # Workspace configuration
 ```
@@ -66,6 +67,7 @@ fitlog/
 - npm 9+
 
 ### Installation
+
 ```bash
 # Clone the repository
 git clone https://github.com/vmvenkatesh78/fitlog.git
@@ -77,23 +79,32 @@ npm install
 
 ### Development
 
-You need **two terminals** to run the full MFE setup:
+You need **4 terminals** to run the full MFE setup:
 
-**Terminal 1 - Workout MFE (build + preview):**
 ```bash
+# Terminal 1: Workout MFE (port 3001)
 npm run build -w apps/workout-mfe && npm run preview -w apps/workout-mfe
-```
 
-**Terminal 2 - Shell (dev mode):**
-```bash
+# Terminal 2: Food MFE (port 3002)
+npm run build -w apps/food-mfe && npm run preview -w apps/food-mfe
+
+# Terminal 3: Analytics MFE (port 3003)
+npm run build -w apps/analytics-mfe && npm run preview -w apps/analytics-mfe
+
+# Terminal 4: Shell (port 3000)
 npm run dev -w apps/shell
 ```
 
 Open http://localhost:3000
 
+### Why Build + Preview for MFEs?
+
+Vite's dev mode doesn't generate `remoteEntry.js` (required for Module Federation). MFEs must be built first, then served via preview mode.
+
 ### Standalone MFE Development
 
 For faster iteration on a single MFE:
+
 ```bash
 npm run dev -w apps/workout-mfe
 # Open http://localhost:3001
@@ -104,6 +115,7 @@ npm run dev -w apps/workout-mfe
 ### @fitlog/ui
 
 Reusable UI components:
+
 ```tsx
 import { Button, Card, Input } from '@fitlog/ui';
 
@@ -115,6 +127,7 @@ import { Button, Card, Input } from '@fitlog/ui';
 ### @fitlog/icons
 
 SVG icons as React components:
+
 ```tsx
 import { Dumbbell, Apple, ChartBar } from '@fitlog/icons';
 
@@ -124,15 +137,19 @@ import { Dumbbell, Apple, ChartBar } from '@fitlog/icons';
 ### @fitlog/utils
 
 Utilities for cross-MFE communication and formatting:
-```tsx
-import { emit, on, formatDate, formatCalories } from '@fitlog/utils';
 
-// Event bus
-emit('workout:logged', { exercise: 'Squat', sets: 3 });
-on('workout:logged', (data) => console.log(data));
+```tsx
+import { emit, on, Events, formatDate, formatCalories } from '@fitlog/utils';
+
+// Event bus - cross-MFE communication
+emit(Events.WORKOUT_LOGGED, { exercise: 'Squat', sets: 3 });
+
+on(Events.WORKOUT_LOGGED, (data) => {
+  console.log('Workout logged:', data);
+});
 
 // Formatters
-formatDate(new Date());     // "Dec 31, 2024"
+formatDate(new Date());     // "Dec 31, 2025"
 formatCalories(1500);       // "1,500 cal"
 ```
 
@@ -141,24 +158,46 @@ formatCalories(1500);       // "1,500 cal"
 | Document | Description |
 |----------|-------------|
 | [ARCHITECTURE.md](docs/Architecture.md) | System design and how everything fits together |
-| [DECISIONS.md](docs/Decisionss.md) | Architecture Decision Records (ADRs) |
+| [DECISIONS.md](docs/Decisions.md) | Architecture Decision Records (ADRs) |
 | [COMPLETE_GUIDE.md](docs/CompleteGuide.md) | Beginner-friendly guide to every file |
 | [LEARNING_JOURNEY.md](docs/LearningJourney.md) | Questions, problems, and solutions |
-| [MFE Communication.md](docs/Communication.md) | Explains MFE communication |
+| [COMMUNICATION.md](docs/Communication.md) | Cross-MFE communication patterns |
 
 ## 🗺️ Roadmap
+
+### Completed ✅
 
 - [x] Monorepo setup with npm workspaces
 - [x] Shell app with routing and Redux
 - [x] Shared packages (ui, icons, utils)
 - [x] Workout MFE with Module Federation
-- [ ] Food MFE
-- [ ] Analytics MFE
-- [ ] Cross-MFE event communication
+- [x] Food MFE
+- [x] Analytics MFE
+- [x] Cross-MFE event communication
+- [x] localStorage persistence
+- [x] ESLint 9 configuration
+
+### In Progress 🚧
+
 - [ ] Design Tokens integration
-- [ ] Web Components
+- [ ] More workout features
+- [ ] Food logging functionality
+
+### Planned 📋
+
+- [ ] Web Components exploration
 - [ ] TDD implementation
 - [ ] Performance optimization
+- [ ] Deployment to Vercel
+
+## 🔑 Key Achievement
+
+> "A workout logged in one MFE updates analytics in another MFE without shared state."
+
+This proves:
+- Loose coupling between MFEs
+- No shared Redux abuse
+- Real-world MFE interaction pattern
 
 ## 🤝 Contributing
 

@@ -14,13 +14,16 @@ This document contains all architectural decisions made during the development o
 6. [ADR-006: Module Federation Plugin](#adr-006-module-federation-plugin)
 7. [ADR-007: Styling Approach](#adr-007-styling-approach)
 8. [ADR-008: Development Workflow](#adr-008-development-workflow)
+9. [ADR-009: Cross-MFE Data Persistence](#adr-009-cross-mfe-data-persistence)
+10. [ADR-010: ESLint 9 Configuration](#adr-010-eslint-9-configuration)
+11. [ADR-011: Form Field Design](#adr-011-form-field-design)
 
 ---
 
 ## ADR-001: Monorepo vs Polyrepo
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 Building a Micro Frontend application requires deciding how to organize code repositories. The two main approaches are:
@@ -88,7 +91,7 @@ github.com/vmvenkatesh78/fitlog-ui
 ## ADR-002: Build Tool Selection
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 Need to choose a build tool that supports:
@@ -147,7 +150,7 @@ The limitation of Vite dev mode not supporting Module Federation was discovered 
 ## ADR-003: State Management Strategy
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 MFE applications need clear state management boundaries:
@@ -224,7 +227,7 @@ const [workouts, setWorkouts] = useState([]);
 ## ADR-004: Cross-MFE Communication
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 MFEs need to communicate:
@@ -307,7 +310,7 @@ useEffect(() => {
 ## ADR-005: Shared Packages Structure
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 MFEs need to share:
@@ -389,7 +392,7 @@ Create three workspace packages:
 ## ADR-006: Module Federation Plugin
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 Need Module Federation support for Vite to enable runtime loading of MFEs.
@@ -444,7 +447,7 @@ npm run dev -w apps/shell
 ## ADR-007: Styling Approach
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 Need consistent styling across Shell and MFEs.
@@ -517,7 +520,7 @@ const tokens = {
 ## ADR-008: Development Workflow
 
 ### Status
-**Accepted** - December 31, 2024
+**Accepted** - December 31, 2025
 
 ### Context
 Need efficient development workflow for:
@@ -566,6 +569,138 @@ npm run preview -w apps/shell
 - Fast for isolated development
 - Clear separation of concerns
 
+### Consequences
+- Slightly slower for MFE integration testing
+- Fast for isolated development
+- Clear separation of concerns
+
+---
+
+## ADR-009: Cross-MFE Data Persistence
+
+### Status
+**Accepted** - January 1, 2026
+
+### Context
+MFEs need to share data (e.g., Workout MFE → Analytics MFE), but:
+- Events are fire-and-forget (lost if no listener)
+- MFEs mount/unmount independently
+- Page refresh loses all in-memory state
+
+### Decision
+Use **Event Bus + localStorage** together:
+- localStorage for persistence across navigation
+- Event bus for real-time updates when both MFEs are mounted
+
+### Options Considered
+
+#### Option A: Event Bus Only
+**Pros:** Simple, no persistence layer
+**Cons:** Events lost when target MFE not mounted
+
+#### Option B: localStorage Only
+**Pros:** Data persists
+**Cons:** No real-time updates, must poll or refresh
+
+#### Option C: Event Bus + localStorage ✅ CHOSEN
+**Pros:** Best of both worlds
+**Cons:** Slightly more code
+
+#### Option D: Shared Redux Store
+**Pros:** Reactive, automatic updates
+**Cons:** Tight coupling, defeats MFE independence
+
+### Consequences
+- Workout MFE saves to localStorage AND emits event
+- Analytics MFE reads localStorage on mount AND listens for events
+- Data survives navigation and page refresh
+- Real-time updates work when both MFEs visible
+
+### Example Implementation
+```typescript
+// Workout MFE - Save
+const updated = [newWorkout, ...workouts];
+localStorage.setItem('fitlog-workouts', JSON.stringify(updated));
+emit(Events.WORKOUT_LOGGED, newWorkout);
+
+// Analytics MFE - Load + Listen
+const [count, setCount] = useState(() => {
+  const saved = localStorage.getItem('fitlog-workouts');
+  return saved ? JSON.parse(saved).length : 0;
+});
+
+useEffect(() => {
+  const cleanup = on(Events.WORKOUT_LOGGED, () => {
+    setCount(prev => prev + 1);
+  });
+  return cleanup;
+}, []);
+```
+
+---
+
+## ADR-010: ESLint 9 Configuration
+
+### Status
+**Accepted** - January 1, 2026
+
+### Context
+ESLint 9 removed support for `.eslintrc.*` files. Our CI failed with:
+```
+ESLint couldn't find an eslint.config.js file
+```
+
+### Decision
+Create `eslint.config.js` using ESLint 9's flat config format.
+
+### Key Changes
+```javascript
+// Old way (.eslintrc.js) - NO LONGER WORKS
+module.exports = {
+  extends: ['plugin:react/recommended'],
+  rules: { ... }
+};
+
+// New way (eslint.config.js) - REQUIRED
+export default [
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tsparser,
+      globals: {
+        window: 'readonly',
+        localStorage: 'readonly',
+        CustomEvent: 'readonly',
+      },
+    },
+    rules: { ... }
+  }
+];
+```
+
+### Consequences
+- CI passes with ESLint 9
+- Must manually specify globals (window, document, etc.)
+- Plugins configured differently than before
+
+---
+
+## Decision Log Summary
+
+| ADR | Decision | Date |
+|-----|----------|------|
+| 001 | Monorepo with npm workspaces | Dec 31, 2025 |
+| 002 | Vite 7 as build tool | Dec 31, 2025 |
+| 003 | Minimal global state (auth, user, prefs only) | Dec 31, 2025 |
+| 004 | DOM CustomEvents for cross-MFE communication | Dec 31, 2025 |
+| 005 | Three shared packages (ui, icons, utils) | Dec 31, 2025 |
+| 006 | @originjs/vite-plugin-federation | Dec 31, 2025 |
+| 007 | Plain CSS, Design Tokens planned | Dec 31, 2025 |
+| 008 | Build + preview for MFE integration | Dec 31, 2025 |
+| 009 | Event Bus + localStorage for persistence | Jan 1, 2026 |
+| 010 | ESLint 9 flat config | Jan 1, 2026 |
+| 011 | Remove user-unknown fields from forms | Jan 1, 2026 |
+
 ---
 
 ## Template for Future ADRs
@@ -600,11 +735,13 @@ Links to relevant resources
 
 | ADR | Decision | Date |
 |-----|----------|------|
-| 001 | Monorepo with npm workspaces | Dec 31, 2024 |
-| 002 | Vite 7 as build tool | Dec 31, 2024 |
-| 003 | Minimal global state (auth, user, prefs only) | Dec 31, 2024 |
-| 004 | DOM CustomEvents for cross-MFE communication | Dec 31, 2024 |
-| 005 | Three shared packages (ui, icons, utils) | Dec 31, 2024 |
-| 006 | @originjs/vite-plugin-federation | Dec 31, 2024 |
-| 007 | Plain CSS, Design Tokens planned | Dec 31, 2024 |
-| 008 | Build + preview for MFE integration | Dec 31, 2024 |
+| 001 | Monorepo with npm workspaces | Dec 31, 2025 |
+| 002 | Vite 7 as build tool | Dec 31, 2025 |
+| 003 | Minimal global state (auth, user, prefs only) | Dec 31, 2025 |
+| 004 | DOM CustomEvents for cross-MFE communication | Dec 31, 2025 |
+| 005 | Three shared packages (ui, icons, utils) | Dec 31, 2025 |
+| 006 | @originjs/vite-plugin-federation | Dec 31, 2025 |
+| 007 | Plain CSS, Design Tokens planned | Dec 31, 2025 |
+| 008 | Build + preview for MFE integration | Dec 31, 2025 |
+| 009 | Cross-MFE Data Persistence | Jan 1, 2026 |
+| 010 | ESLint 9 Configuration | Dec 31, 2026 |

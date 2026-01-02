@@ -3,7 +3,7 @@
 ## A Comprehensive Guide to Understanding Every Aspect of This Project
 
 **Author:** Venkatesh Mukundan  
-**Date:** December 31, 2024  
+**Date:** December 31, 2025 (Updated January 1, 2026)  
 **Target Audience:** Juniors, beginners, or anyone wanting to understand MFE from scratch
 
 ---
@@ -17,9 +17,11 @@
 5. [How Module Federation Works](#5-how-module-federation-works)
 6. [State Management Explained](#6-state-management-explained)
 7. [Shared Packages Deep Dive](#7-shared-packages-deep-dive)
-8. [Development Workflow](#8-development-workflow)
-9. [Common Commands](#9-common-commands)
-10. [Glossary](#10-glossary)
+8. [Cross-MFE Communication](#8-cross-mfe-communication)
+9. [Development Workflow](#9-development-workflow)
+10. [Common Commands](#10-common-commands)
+11. [Common Gotchas](#11-common-gotchas)
+12. [Glossary](#12-glossary)
 
 ---
 
@@ -111,36 +113,24 @@ fitlog/                          # Root folder
 ├── .github/                     # GitHub-specific configuration
 ├── apps/                        # All applications live here
 ├── packages/                    # Shared code lives here
-├── node_modules/                # Installed dependencies (auto-generated)
 ├── docs/                        # Documentation
+├── node_modules/                # Installed dependencies (auto-generated)
 ├── package.json                 # Root configuration
 ├── package-lock.json            # Locked dependency versions
+├── eslint.config.js             # ESLint 9 flat config
 ├── README.md                    # Project description
 ├── LICENSE                      # MIT license
 └── .gitignore                   # Files Git should ignore
-```
-
-### Why This Structure?
-
-This is a **monorepo** - multiple projects in one repository.
-
-```
-MONOREPO BENEFITS:
-├── One place for all code
-├── Easy to share code between apps
-├── Single pull request for cross-app changes
-├── Consistent tooling and configuration
-└── Easier to onboard new developers
 ```
 
 ### The `apps/` Folder
 
 ```
 apps/
-├── shell/                       # The "host" application
-├── workout-mfe/                 # Workout micro frontend
-├── food-mfe/                    # Food micro frontend (planned)
-└── analytics-mfe/               # Analytics micro frontend (planned)
+├── shell/                       # The "host" application (port 3000)
+├── workout-mfe/                 # Workout micro frontend (port 3001)
+├── food-mfe/                    # Food micro frontend (port 3002)
+└── analytics-mfe/               # Analytics micro frontend (port 3003)
 ```
 
 **Think of it like:**
@@ -157,14 +147,13 @@ The shell provides the structure (navigation, authentication), and MFEs fill in 
 packages/
 ├── ui/                          # Reusable UI components
 ├── icons/                       # Icon components
-├── utils/                       # Utility functions
-└── api/                         # API client (planned)
+└── utils/                       # Utility functions (event bus, formatters)
 ```
 
 **Think of it like:**
 - `ui/` = The mall's interior design elements (same benches, signs everywhere)
 - `icons/` = Standard icons used by all stores
-- `utils/` = Shared facilities (electricity, plumbing)
+- `utils/` = Shared facilities (electricity, plumbing, communication system)
 
 ---
 
@@ -177,16 +166,15 @@ packages/
 {
   "name": "fitlog",
   "version": "1.0.0",
-  "private": true,                    // Don't publish to npm
-  "workspaces": [                     // npm workspaces magic!
-    "apps/*",                         // All folders in apps/
-    "packages/*"                      // All folders in packages/
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "echo 'Use: npm run dev -w apps/shell'",
     "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present"
   }
 }
 ```
@@ -203,74 +191,30 @@ npm run dev -w apps/shell    # Run dev script in shell workspace
 npm install                  # Install deps for ALL workspaces
 ```
 
-#### `.gitignore`
+#### `eslint.config.js`
+```javascript
+// ESLint 9 requires this new "flat config" format
+export default [
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        CustomEvent: 'readonly',  // For event bus
+      },
+    },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+    },
+  },
+];
 ```
-# Dependencies
-node_modules/
-
-# Build outputs
-dist/
-
-# Environment files
-.env
-.env.local
-
-# Editor files
-.vscode/
-.idea/
-
-# OS files
-.DS_Store
-
-# Test coverage
-coverage/
-
-# Logs
-*.log
-```
-
-**Why ignore these?**
-- `node_modules/` - Can be regenerated with `npm install`
-- `dist/` - Can be regenerated with `npm run build`
-- `.env` - Contains secrets, shouldn't be in Git
-- `.DS_Store` - macOS system files, useless
 
 ---
 
 ### Shell Application Files
-
-#### `apps/shell/package.json`
-```json
-{
-  "name": "@fitlog/shell",            // Scoped package name
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",                   // Use ES modules
-  "scripts": {
-    "dev": "vite --port 3000",        // Start dev server
-    "build": "vite build",            // Create production build
-    "preview": "vite preview --port 3000"  // Serve built files
-  },
-  "dependencies": {
-    "react": "^18.2.0",               // React library
-    "react-dom": "^18.2.0",           // React DOM renderer
-    "react-router-dom": "^6.20.0",    // Routing library
-    "@reduxjs/toolkit": "^2.0.0",     // State management
-    "react-redux": "^9.0.0"           // React-Redux bindings
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.0",        // TypeScript types
-    "@vitejs/plugin-react": "^4.2.0", // Vite React plugin
-    "@originjs/vite-plugin-federation": "^1.3.5",  // Module Federation!
-    "typescript": "^5.3.0",
-    "vite": "^7.0.0"
-  }
-}
-```
-
-**What's the difference between `dependencies` and `devDependencies`?**
-- `dependencies` - Needed at runtime (in the browser)
-- `devDependencies` - Only needed during development/build
 
 #### `apps/shell/vite.config.ts`
 ```typescript
@@ -280,21 +224,17 @@ import federation from '@originjs/vite-plugin-federation';
 
 export default defineConfig({
   plugins: [
-    react(),                          // Enable React support
+    react(),
     federation({
-      name: 'shell',                  // This app's name
-      remotes: {                      // Remote MFEs to load
+      name: 'shell',
+      remotes: {
         workout: 'http://localhost:3001/assets/remoteEntry.js',
+        food: 'http://localhost:3002/assets/remoteEntry.js',
+        analytics: 'http://localhost:3003/assets/remoteEntry.js',
       },
-      shared: ['react', 'react-dom', 'react-router-dom'],  // Share these!
+      shared: ['react', 'react-dom', 'react-router-dom'],
     }),
   ],
-  build: {
-    modulePreload: false,
-    target: 'esnext',                 // Use modern JavaScript
-    minify: false,                    // Don't minify (easier debugging)
-    cssCodeSplit: false,
-  },
 });
 ```
 
@@ -304,184 +244,64 @@ Without `shared`:
 ```
 Shell loads React (500KB)
 Workout loads React (500KB)
-Total: 1MB of React!
+Food loads React (500KB)
+Total: 1.5MB of React!
 ```
 
 With `shared`:
 ```
 Shell loads React (500KB)
-Workout reuses Shell's React
+All MFEs reuse Shell's React
 Total: 500KB of React!
 ```
-
-#### `apps/shell/src/main.tsx`
-```typescript
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { Provider } from 'react-redux';        // Redux wrapper
-import { BrowserRouter } from 'react-router-dom';  // Routing wrapper
-import { store } from './store';
-import App from './App';
-import './index.css';
-
-// Find the <div id="root"> in index.html
-// Render our React app inside it
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>                           {/* Extra checks in dev */}
-    <Provider store={store}>                   {/* Redux available everywhere */}
-      <BrowserRouter>                          {/* Routing available everywhere */}
-        <App />
-      </BrowserRouter>
-    </Provider>
-  </React.StrictMode>
-);
-```
-
-**Why all these wrappers?**
-
-Each wrapper provides context that components below can access:
-- `Provider` → Components can use `useSelector`, `useDispatch`
-- `BrowserRouter` → Components can use `useNavigate`, `useLocation`
 
 #### `apps/shell/src/App.tsx`
 ```typescript
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from './store';
-import Header from './components/Header';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-// MAGIC: This loads the Workout app from a different server!
+// MAGIC: These load from different servers at RUNTIME!
 const WorkoutApp = React.lazy(() => import('workout/App'));
+const FoodApp = React.lazy(() => import('food/App'));
+const AnalyticsApp = React.lazy(() => import('analytics/App'));
 
 function App() {
-  const preferences = useSelector((state: RootState) => state.preferences);
-
   return (
-    <div className={`app theme-${preferences.theme}`}>
+    <div className="app">
       <Header />
-      <main className="main">
+      <main>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<Home />} />
           <Route
-            path="/workout/*"               {/* /workout and anything after */}
+            path="/workout/*"
             element={
               <Suspense fallback={<div>Loading Workout...</div>}>
-                <WorkoutApp />              {/* Loaded from port 3001! */}
+                <WorkoutApp />
               </Suspense>
             }
           />
-          <Route path="/food/*" element={<div>Food MFE coming soon</div>} />
-          <Route path="/analytics/*" element={<div>Analytics MFE coming soon</div>} />
+          <Route
+            path="/food/*"
+            element={
+              <Suspense fallback={<div>Loading Food...</div>}>
+                <FoodApp />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/analytics/*"
+            element={
+              <Suspense fallback={<div>Loading Analytics...</div>}>
+                <AnalyticsApp />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
     </div>
   );
 }
-```
-
-**What is `React.lazy`?**
-
-Normal import:
-```typescript
-import WorkoutApp from 'workout/App';  // Loads immediately
-```
-
-Lazy import:
-```typescript
-const WorkoutApp = React.lazy(() => import('workout/App'));  // Loads when needed
-```
-
-With lazy loading, the Workout code only downloads when you visit `/workout`.
-
-**What is `Suspense`?**
-
-While lazy component is loading, show the `fallback`:
-```typescript
-<Suspense fallback={<div>Loading...</div>}>
-  <WorkoutApp />  {/* Shows "Loading..." until WorkoutApp is ready */}
-</Suspense>
-```
-
-#### `apps/shell/src/store/index.ts`
-```typescript
-import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-// Auth slice - handles login state
-const authSlice = createSlice({
-  name: 'auth',
-  initialState: {
-    isLoggedIn: true,           // For now, always logged in
-    token: 'fake-token',
-  },
-  reducers: {
-    login: (state) => { state.isLoggedIn = true; },
-    logout: (state) => { state.isLoggedIn = false; state.token = ''; },
-  },
-});
-
-// User slice - user profile info
-const userSlice = createSlice({
-  name: 'user',
-  initialState: {
-    id: '1',
-    name: 'Venkatesh',
-    email: 'venkatesh@example.com',
-  },
-  reducers: {
-    setUser: (state, action: PayloadAction<{ name: string; email: string }>) => {
-      state.name = action.payload.name;
-      state.email = action.payload.email;
-    },
-  },
-});
-
-// Preferences slice - app settings
-const preferencesSlice = createSlice({
-  name: 'preferences',
-  initialState: {
-    theme: 'light' as 'light' | 'dark',
-    units: 'metric' as 'metric' | 'imperial',
-  },
-  reducers: {
-    toggleTheme: (state) => {
-      state.theme = state.theme === 'light' ? 'dark' : 'light';
-    },
-    setUnits: (state, action: PayloadAction<'metric' | 'imperial'>) => {
-      state.units = action.payload;
-    },
-  },
-});
-
-// Create the store with all slices
-export const store = configureStore({
-  reducer: {
-    auth: authSlice.reducer,
-    user: userSlice.reducer,
-    preferences: preferencesSlice.reducer,
-  },
-});
-
-// Export actions for components to use
-export const { login, logout } = authSlice.actions;
-export const { setUser } = userSlice.actions;
-export const { toggleTheme, setUnits } = preferencesSlice.actions;
-
-// Export types for TypeScript
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
-```
-
-**Why only these three things in global state?**
-
-```
-GLOBAL (Shell Redux):          LOCAL (MFE State):
-├── auth (who's logged in)     ├── workouts list
-├── user (profile info)        ├── selected exercise
-└── preferences (theme)        └── form inputs
-
-Why? MFEs should be INDEPENDENT.
-If Workout stores its state in Shell, it becomes DEPENDENT.
 ```
 
 #### `apps/shell/src/remotes.d.ts`
@@ -491,12 +311,21 @@ declare module 'workout/App' {
   const App: React.ComponentType;
   export default App;
 }
+
+declare module 'food/App' {
+  const App: React.ComponentType;
+  export default App;
+}
+
+declare module 'analytics/App' {
+  const App: React.ComponentType;
+  export default App;
+}
 ```
 
 **Why is this needed?**
 
-TypeScript doesn't know `workout/App` exists - it's loaded at runtime!
-This file says "trust me, this module exists and exports a React component."
+TypeScript doesn't know these modules exist - they're loaded at runtime! This file says "trust me, these modules exist."
 
 ---
 
@@ -504,235 +333,107 @@ This file says "trust me, this module exists and exports a React component."
 
 #### `apps/workout-mfe/vite.config.ts`
 ```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import federation from '@originjs/vite-plugin-federation';
-
-export default defineConfig({
-  plugins: [
-    react(),
-    federation({
-      name: 'workout',                    // This remote's name
-      filename: 'remoteEntry.js',         // THE KEY FILE!
-      exposes: {                          // What we're sharing
-        './App': './src/App.tsx',         // Expose App component
-      },
-      shared: ['react', 'react-dom', 'react-router-dom'],
-    }),
-  ],
-  build: {
-    modulePreload: false,
-    target: 'esnext',
-    minify: false,
-    cssCodeSplit: false,
+federation({
+  name: 'workout',
+  filename: 'remoteEntry.js',      // THE KEY FILE!
+  exposes: {
+    './App': './src/App.tsx',      // What we share
   },
-  server: {
-    port: 3001,                           // Different port!
-    cors: true,                           // Allow cross-origin requests
-  },
-  preview: {
-    port: 3001,
-    cors: true,
-  },
-});
-```
-
-**What is `remoteEntry.js`?**
-
-This is the "manifest" file that tells the Shell:
-- What modules are available
-- Where to find the actual code
-- What dependencies are needed
-
-```
-Shell: "Hey workout, what do you have?"
-remoteEntry.js: "I have ./App at this location..."
-Shell: "Great, give me ./App"
-remoteEntry.js: "Here's the code!"
-```
-
-#### `apps/workout-mfe/src/main.tsx`
-```typescript
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
-import './index.css';
-
-// This runs when MFE is loaded STANDALONE (localhost:3001)
-// NOT when loaded in Shell (Shell provides its own BrowserRouter)
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>            {/* MFE needs its own router for standalone */}
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
-```
-
-**Why does main.tsx have BrowserRouter but App.tsx doesn't?**
-
-```
-STANDALONE MODE (localhost:3001):
-main.tsx runs → provides BrowserRouter → App works ✓
-
-IN SHELL (localhost:3000/workout):
-Shell's main.tsx runs → provides BrowserRouter → imports App.tsx (not main.tsx)
-App.tsx has no BrowserRouter → uses Shell's → works ✓
+  shared: ['react', 'react-dom', 'react-router-dom'],
+})
 ```
 
 #### `apps/workout-mfe/src/App.tsx`
 ```typescript
-import { Routes, Route } from 'react-router-dom';
-import { Button, Card, CardHeader, CardBody } from '@fitlog/ui';
-import { Dumbbell, Plus } from '@fitlog/icons';
+import { useState } from 'react';
+import { emit, Events } from '@fitlog/utils';
 
 function WorkoutApp() {
-  return (
-    <div className="workout-app">
-      <Routes>                             {/* Routes WITHIN the MFE */}
-        <Route path="/" element={<WorkoutList />} />
-        <Route path="/new" element={<NewWorkout />} />
-      </Routes>
-    </div>
-  );
-}
+  const [workouts, setWorkouts] = useState(() => {
+    const saved = localStorage.getItem('fitlog-workouts');
+    if (!saved) return [];
+    // Convert timestamps back to Date objects!
+    return JSON.parse(saved).map(w => ({
+      ...w,
+      timestamp: new Date(w.timestamp),
+    }));
+  });
 
-function WorkoutList() {
-  return (
-    <div className="workout-list">
-      <div className="workout-header">
-        <h2><Dumbbell size={24} /> My Workouts</h2>
-        <Button variant="primary">
-          <Plus size={18} />
-          New Workout
-        </Button>
-      </div>
-      
-      <div className="workout-cards">
-        <Card>
-          <CardHeader>
-            <strong>Morning Strength</strong>
-          </CardHeader>
-          <CardBody>
-            <p>Squats, Bench Press, Deadlift</p>
-          </CardBody>
-        </Card>
-      </div>
-    </div>
-  );
-}
+  const handleLogWorkout = (workout) => {
+    const newWorkout = { ...workout, id: Date.now(), timestamp: new Date() };
+    const updated = [newWorkout, ...workouts];
+    setWorkouts(updated);
+    
+    // Save to localStorage (persistence)
+    localStorage.setItem('fitlog-workouts', JSON.stringify(updated));
+    
+    // Emit event (real-time update for Analytics)
+    emit(Events.WORKOUT_LOGGED, workout);
+  };
 
-export default WorkoutApp;  // This is what Shell imports!
+  return (/* UI */);
+}
 ```
 
 ---
 
-### Shared Packages
+### Food MFE Files (apps/food-mfe/)
 
-#### `packages/ui/package.json`
-```json
-{
-  "name": "@fitlog/ui",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "main": "src/index.ts",            // Entry point
-  "types": "src/index.ts",           // TypeScript types location
-  "peerDependencies": {
-    "react": "^18.2.0",              // Expects React to exist
-    "react-dom": "^18.2.0"
-  }
-}
+#### Purpose
+Minimal Food tracking MFE to prove Module Federation scales to multiple remotes.
+
+#### `vite.config.ts`
+```typescript
+federation({
+  name: 'food',
+  filename: 'remoteEntry.js',
+  exposes: {
+    './App': './src/App.tsx',
+  },
+  shared: ['react', 'react-dom', 'react-router-dom'],
+})
 ```
 
-**What are `peerDependencies`?**
+Port: 3002
 
-Regular dependency: "I'll bring my own React"
-Peer dependency: "I expect YOU to have React already"
+---
 
-This prevents duplicate React installations.
+### Analytics MFE Files (apps/analytics-mfe/)
 
-#### `packages/ui/src/components/Button/Button.tsx`
+#### Purpose
+Dashboard that displays data from OTHER MFEs. Proves cross-MFE communication works.
+
+#### `src/App.tsx`
 ```typescript
-import React from 'react';
-import './Button.css';
+import { useState, useEffect } from 'react';
+import { on, Events } from '@fitlog/utils';
 
-// Define props interface for TypeScript
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  children: React.ReactNode;
-}
+function AnalyticsApp() {
+  // Load initial count from localStorage
+  const [workoutCount, setWorkoutCount] = useState(() => {
+    const saved = localStorage.getItem('fitlog-workouts');
+    return saved ? JSON.parse(saved).length : 0;
+  });
 
-// The component
-export function Button({ 
-  variant = 'primary',    // Default value
-  size = 'md',            // Default value
-  children, 
-  className = '',
-  ...props                // Spread remaining props (onClick, disabled, etc.)
-}: ButtonProps) {
+  // Listen for real-time updates
+  useEffect(() => {
+    const cleanup = on(Events.WORKOUT_LOGGED, () => {
+      setWorkoutCount((prev) => prev + 1);
+    });
+    return cleanup;
+  }, []);
+
   return (
-    <button 
-      className={`btn btn-${variant} btn-${size} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
+    <div>
+      <h2>Workouts Logged: {workoutCount}</h2>
+    </div>
   );
 }
 ```
 
-#### `packages/utils/src/eventBus.ts`
-```typescript
-// Simple event bus for cross-MFE communication
-// Uses browser's built-in CustomEvent - no library needed!
-
-type EventCallback<T = unknown> = (data: T) => void;
-
-// Emit an event
-export function emit<T = unknown>(event: string, data?: T): void {
-  window.dispatchEvent(new CustomEvent(event, { detail: data }));
-}
-
-// Listen to an event
-export function on<T = unknown>(event: string, callback: EventCallback<T>): () => void {
-  const handler = (e: Event) => {
-    const customEvent = e as CustomEvent<T>;
-    callback(customEvent.detail);
-  };
-  
-  window.addEventListener(event, handler);
-  
-  // Return cleanup function
-  return () => window.removeEventListener(event, handler);
-}
-
-// Predefined event names
-export const Events = {
-  WORKOUT_LOGGED: 'workout:logged',
-  MEAL_LOGGED: 'meal:logged',
-} as const;
-```
-
-**How to use:**
-
-```typescript
-// Workout MFE - when workout is saved
-import { emit, Events } from '@fitlog/utils';
-emit(Events.WORKOUT_LOGGED, { exercise: 'Squat', sets: 3 });
-
-// Analytics MFE - listening for workouts
-import { on, Events } from '@fitlog/utils';
-useEffect(() => {
-  const cleanup = on(Events.WORKOUT_LOGGED, (data) => {
-    console.log('New workout!', data);
-    updateChart(data);
-  });
-  return cleanup;  // Clean up when component unmounts
-}, []);
-```
+**Why two data sources?**
+1. `localStorage` - For data that persists across page navigation
+2. Event listener - For real-time updates when both MFEs are mounted
 
 ---
 
@@ -771,28 +472,18 @@ useEffect(() => {
 │  │  import('workout/App')                                 │ │
 │  │         │                                              │ │
 │  │         ▼                                              │ │
-│  │  "Where is workout/App?"                               │ │
-│  │         │                                              │ │
-│  │         ▼                                              │ │
 │  │  Check vite.config.ts remotes:                         │ │
 │  │  workout: 'http://localhost:3001/assets/remoteEntry.js'│ │
-│  │         │                                              │ │
 │  └─────────┼──────────────────────────────────────────────┘ │
 │            │                                                 │
 │            ▼ HTTP Request                                   │
 │  ┌─────────────────────────────────────────────────────────┐│
 │  │  localhost:3001 (Workout MFE)                           ││
-│  │                                                         ││
-│  │  /assets/remoteEntry.js                                 ││
-│  │  "I expose ./App from ./src/App.tsx"                    ││
-│  │  "Here's the code..."                                   ││
+│  │  remoteEntry.js → "Here's the App code..."              ││
 │  └─────────────────────────────────────────────────────────┘│
 │            │                                                 │
 │            ▼                                                │
-│  Shell receives component code                              │
-│  React renders it                                           │
-│  User sees Workout page!                                    │
-│                                                              │
+│  Shell renders WorkoutApp component                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -806,257 +497,195 @@ useEffect(() => {
 RULE: Keep global state MINIMAL
 
 GLOBAL (Redux in Shell):
-├── auth      → Is user logged in? What's their token?
-├── user      → Who is the user? Name, email?
-└── preferences → Theme (light/dark), units (kg/lbs)
+├── auth      → Is user logged in?
+├── user      → Who is the user?
+└── preferences → Theme, units
 
 LOCAL (useState in MFEs):
-├── workouts   → List of workouts in Workout MFE
-├── meals      → List of meals in Food MFE
-├── chartData  → Chart data in Analytics MFE
-└── formInputs → Form state in any MFE
+├── workouts   → List of workouts (Workout MFE)
+├── meals      → List of meals (Food MFE)
+└── chartData  → Chart data (Analytics MFE)
 ```
 
 ### Why This Split?
 
 **If everything is in Redux:**
-```typescript
-// Shell Redux with ALL state
-{
-  auth: {...},
-  user: {...},
-  preferences: {...},
-  workouts: [...],    // Workout MFE data
-  meals: [...],       // Food MFE data
-  analytics: {...},   // Analytics MFE data
-}
-
-// PROBLEMS:
-// 1. Workout MFE is now DEPENDENT on Shell
-// 2. Can't extract Workout to separate repo
-// 3. Shell needs to know about Workout's data structure
-// 4. Tight coupling!
+```
+PROBLEMS:
+1. Workout MFE depends on Shell
+2. Can't extract to separate repo
+3. Shell knows about workout data structure
+4. TIGHT COUPLING!
 ```
 
 **With our approach:**
-```typescript
-// Shell Redux - minimal
-{
-  auth: {...},
-  user: {...},
-  preferences: {...}
-}
-
-// Workout MFE - manages its own
-const [workouts, setWorkouts] = useState([]);
-
-// BENEFITS:
-// 1. Workout MFE is INDEPENDENT
-// 2. Can extract to separate repo easily
-// 3. Shell doesn't care about workout data
-// 4. Loose coupling!
+```
+BENEFITS:
+1. Workout MFE is INDEPENDENT
+2. Can extract to separate repo easily
+3. Shell doesn't care about workout data
+4. LOOSE COUPLING!
 ```
 
 ---
 
 ## 7. Shared Packages Deep Dive
 
-### Why Shared Packages?
-
-Without shared packages:
-```typescript
-// Shell
-const Button = ({ children }) => <button>{children}</button>;
-
-// Workout MFE
-const Button = ({ children }) => <button>{children}</button>;  // Duplicate!
-
-// Food MFE
-const Button = ({ children }) => <button>{children}</button>;  // Duplicate!
-
-// Different styles, behaviors, bugs!
-```
-
-With shared packages:
-```typescript
-// Every MFE
-import { Button } from '@fitlog/ui';
-
-// Same component everywhere!
-// Fix once, fixed everywhere!
-```
-
 ### Package: @fitlog/ui
 
-**Purpose:** Reusable UI components
-
 **Components:**
-- `Button` - Clickable button with variants
-- `Card` - Container with optional header/footer
-- `Input` - Form input with label and error
-
-**Usage:**
-```typescript
-import { Button, Card, Input } from '@fitlog/ui';
-
-<Button variant="primary" size="lg">Click me</Button>
-<Card padding="md"><p>Content</p></Card>
-<Input label="Email" error="Invalid email" />
-```
+- `Button` - Variants: primary, secondary, ghost
+- `Card` - With CardHeader, CardBody, CardFooter
+- `Input` - With label and error states
 
 ### Package: @fitlog/icons
 
-**Purpose:** SVG icons as React components
-
 **Icons:**
-- `Dumbbell` - Workout icon
-- `Apple` - Food icon
-- `ChartBar` - Analytics icon
-- `User` - Profile icon
-- `Settings` - Settings icon
-- `Plus`, `Check`, `X` - Common actions
-
-**Usage:**
-```typescript
-import { Dumbbell, Plus } from '@fitlog/icons';
-
-<Dumbbell size={24} />
-<Plus size={18} className="text-white" />
-```
+- `Dumbbell`, `Apple`, `ChartBar` - Navigation
+- `User`, `Settings` - Header
+- `Plus`, `Check`, `X` - Actions
 
 ### Package: @fitlog/utils
 
-**Purpose:** Shared utility functions
-
-**Features:**
-- `emit()` / `on()` - Cross-MFE event communication
-- `formatDate()` - Date formatting
-- `formatCalories()` - Number formatting
-- `formatWeight()` - Weight with units
-
-**Usage:**
+**Event Bus:**
 ```typescript
-import { emit, on, formatDate, formatCalories } from '@fitlog/utils';
+import { emit, on, Events } from '@fitlog/utils';
 
-// Events
-emit('workout:logged', { exercise: 'Squat' });
-const cleanup = on('workout:logged', (data) => console.log(data));
+// Emit
+emit(Events.WORKOUT_LOGGED, { exercise: 'Squat' });
 
-// Formatters
-formatDate(new Date());        // "Dec 31, 2024"
+// Listen
+const cleanup = on(Events.WORKOUT_LOGGED, (data) => {
+  console.log(data);
+});
+
+// Cleanup when component unmounts
+return cleanup;
+```
+
+**Formatters:**
+```typescript
+formatDate(new Date());        // "Dec 31, 2025"
 formatCalories(1500);          // "1,500 cal"
 formatWeight(70, 'metric');    // "70.0 kg"
-formatWeight(70, 'imperial');  // "154.3 lbs"
 ```
 
 ---
 
-## 8. Development Workflow
+## 8. Cross-MFE Communication
 
-### Starting the Project
+### The Problem
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/vmvenkatesh78/fitlog.git
-cd fitlog
+MFEs are independent. How do they share data without tight coupling?
 
-# 2. Install ALL dependencies (root + all workspaces)
-npm install
+### The Solution: Event Bus + Persistence
 
-# 3. Start development
-# Terminal 1: Build & preview MFE
-npm run build -w apps/workout-mfe && npm run preview -w apps/workout-mfe
-
-# Terminal 2: Start Shell
-npm run dev -w apps/shell
-
-# 4. Open browser
-# http://localhost:3000
+```
+┌─────────────────┐                     ┌─────────────────┐
+│   Workout MFE   │                     │  Analytics MFE  │
+│                 │                     │                 │
+│  1. Save to     │                     │  3. Read from   │
+│     localStorage│                     │     localStorage│
+│                 │                     │     on mount    │
+│  2. emit()      │ ──── Event Bus ───► │                 │
+│     event       │                     │  4. Listen for  │
+│                 │                     │     real-time   │
+└─────────────────┘                     └─────────────────┘
 ```
 
-### Why Two Terminals?
+### Why Both?
+
+| Scenario | Solution |
+|----------|----------|
+| User logs workout, then navigates to Analytics | localStorage (event missed) |
+| User has both visible (future split view) | Event bus (real-time) |
+| User refreshes Analytics page | localStorage (events lost on refresh) |
+
+---
+
+## 9. Development Workflow
+
+### Running All MFEs
+
+You need **4 terminals**:
+
+```bash
+# Terminal 1: Workout MFE (port 3001)
+npm run build -w apps/workout-mfe && npm run preview -w apps/workout-mfe
+
+# Terminal 2: Food MFE (port 3002)
+npm run build -w apps/food-mfe && npm run preview -w apps/food-mfe
+
+# Terminal 3: Analytics MFE (port 3003)
+npm run build -w apps/analytics-mfe && npm run preview -w apps/analytics-mfe
+
+# Terminal 4: Shell (port 3000)
+npm run dev -w apps/shell
+```
+
+### Why Build + Preview for MFEs?
 
 ```
 VITE DEV MODE:
 ├── Serves raw source files
-├── Super fast HMR
-├── BUT... no remoteEntry.js!
-└── Module Federation fails
+├── No bundling
+├── remoteEntry.js doesn't exist!
+└── Module Federation FAILS
 
 VITE BUILD + PREVIEW:
-├── Creates bundled files
-├── Generates remoteEntry.js ✓
-├── Slower to update
-└── Module Federation works!
+├── Bundles the code
+├── Creates remoteEntry.js ✅
+└── Module Federation WORKS
 ```
-
-So we:
-- Build + preview MFEs (need remoteEntry.js)
-- Dev mode for Shell (fast HMR for shell changes)
 
 ### Development Scenarios
 
-**Working on Shell UI:**
+**Working on Shell:**
 ```bash
-# Only need to change Terminal 2
 npm run dev -w apps/shell
-# Make changes, see instant updates!
+# Fast HMR for shell changes
 ```
 
-**Working on MFE (standalone):**
+**Working on MFE standalone:**
 ```bash
-# Fastest for MFE-only changes
 npm run dev -w apps/workout-mfe
 # Open localhost:3001 directly
+# Fast HMR for MFE changes
 ```
 
 **Testing MFE in Shell:**
 ```bash
-# Terminal 1: Rebuild MFE
+# Rebuild MFE
 npm run build -w apps/workout-mfe && npm run preview -w apps/workout-mfe
-
-# Terminal 2: Shell already running
-# Refresh browser to see MFE changes
+# Refresh Shell
 ```
 
 ---
 
-## 9. Common Commands
+## 10. Common Commands
 
 ### Installation
-
 ```bash
-npm install                        # Install all dependencies
-npm install <pkg> -w apps/shell   # Add package to specific workspace
+npm install                        # All workspaces
+npm install <pkg> -w apps/shell   # Specific workspace
 ```
 
 ### Development
-
 ```bash
-npm run dev -w apps/shell          # Start shell dev server
-npm run dev -w apps/workout-mfe    # Start workout MFE standalone
+npm run dev -w apps/shell
+npm run dev -w apps/workout-mfe
 ```
 
 ### Building
-
 ```bash
-npm run build                      # Build all workspaces
-npm run build -w apps/shell        # Build specific workspace
+npm run build                      # All workspaces
+npm run build -w apps/workout-mfe  # Specific workspace
 npm run preview -w apps/shell      # Serve built files
 ```
 
-### Git
-
-```bash
-git add .
-git commit -m "feat: add workout list"
-git push origin dev
-```
-
 ### Troubleshooting
-
 ```bash
-# Clear everything and reinstall
+# Nuclear option - clear everything
 rm -rf node_modules package-lock.json
 rm -rf apps/*/node_modules apps/*/dist
 rm -rf packages/*/node_modules
@@ -1065,7 +694,49 @@ npm install
 
 ---
 
-## 10. Glossary
+## 11. Common Gotchas
+
+### 1. JSON.parse Loses Date Types
+
+```typescript
+// ❌ Wrong - timestamp is now a string
+const workouts = JSON.parse(localStorage.getItem('workouts'));
+workout.timestamp.toLocaleTimeString(); // ERROR!
+
+// ✅ Correct - convert back to Date
+const workouts = JSON.parse(saved).map(w => ({
+  ...w,
+  timestamp: new Date(w.timestamp),
+}));
+```
+
+### 2. Events Are Fire-and-Forget
+
+```typescript
+// If Analytics MFE isn't mounted, event is LOST!
+emit(Events.WORKOUT_LOGGED, data);
+
+// Solution: Always persist important data
+localStorage.setItem('fitlog-workouts', JSON.stringify(workouts));
+emit(Events.WORKOUT_LOGGED, data);
+```
+
+### 3. Always Cleanup Event Listeners
+
+```typescript
+useEffect(() => {
+  const cleanup = on(Events.WORKOUT_LOGGED, handler);
+  return cleanup; // ← Memory leak if you forget!
+}, []);
+```
+
+### 4. ESLint 9 Requires Flat Config
+
+Old `.eslintrc` files don't work. Must use `eslint.config.js`.
+
+---
+
+## 12. Glossary
 
 | Term | Definition |
 |------|------------|
@@ -1073,15 +744,11 @@ npm install
 | **Shell** | Host application that loads MFEs |
 | **Remote** | An MFE that exposes modules |
 | **Host** | Application that consumes remotes (Shell) |
-| **Module Federation** | Webpack/Vite feature for runtime module loading |
-| **remoteEntry.js** | Manifest file describing what a remote exposes |
-| **Monorepo** | Single repository containing multiple projects |
-| **Workspace** | npm feature to manage multiple packages in one repo |
-| **Shared Dependencies** | Libraries loaded once and reused across MFEs |
-| **Lazy Loading** | Loading code only when needed |
-| **HMR** | Hot Module Replacement - update without refresh |
+| **Module Federation** | Runtime module loading between apps |
+| **remoteEntry.js** | Manifest file describing exposed modules |
+| **Monorepo** | Single repository with multiple projects |
+| **Workspace** | npm feature for managing multiple packages |
 | **Event Bus** | Pattern for decoupled communication |
-| **Peer Dependencies** | Dependencies expected to be provided by consumer |
 
 ---
 
@@ -1096,12 +763,8 @@ You've learned:
 5. **Module Federation** - How runtime loading works
 6. **State management** - Minimal global, local to MFEs
 7. **Shared packages** - UI, icons, utils
-8. **Development workflow** - Build+preview for MFEs, dev for Shell
-
-This foundation prepares you for:
-- Building more MFEs (Food, Analytics)
-- Adding Design Tokens
-- Implementing TDD
-- Understanding large-scale frontend architecture
+8. **Cross-MFE communication** - Event bus + localStorage
+9. **Development workflow** - Build+preview for MFEs, dev for Shell
+10. **Common gotchas** - Date parsing, event cleanup, ESLint 9
 
 **Happy coding!** 🚀
