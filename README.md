@@ -6,6 +6,8 @@ A fitness tracking app built with **Micro Frontend architecture** — three inde
 
 Fitness tracking is fragmented — workouts in one app, food in another, progress analytics nowhere. FitLog solves this with a single app where three independent modules share data through events and a common design system. The architecture demonstrates how teams scale frontend development independently: each module can be developed, tested, and deployed without touching the others.
 
+**Live:** [fitlog-shell.vercel.app](https://fitlog-shell.vercel.app)
+
 ## Architecture
 
 ```
