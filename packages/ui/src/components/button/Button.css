@@ -1,55 +1,112 @@
+/* ==========================================================================
+   FitLog Button — Token-driven, production UI standard compliant
+   ========================================================================== */
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
+  gap: var(--fl-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--fl-radius-md);
+  font-family: var(--fl-font-sans);
+  font-weight: var(--fl-font-medium);
   cursor: pointer;
-  transition: all 0.2s;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    background-color var(--fl-transition-normal),
+    color var(--fl-transition-normal),
+    border-color var(--fl-transition-normal);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--fl-border-focus);
+  outline-offset: 2px;
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Variants */
 .btn-primary {
-  background: #1a365d;
-  color: white;
+  background: var(--fl-accent);
+  color: var(--fl-text-on-accent);
+  border-color: var(--fl-accent);
 }
+
 .btn-primary:hover:not(:disabled) {
-  background: #2d4a7c;
+  background: var(--fl-accent-hover);
+  border-color: var(--fl-accent-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--fl-accent-active);
 }
 
 .btn-secondary {
-  background: #e2e8f0;
-  color: #1a365d;
+  background: var(--fl-bg-primary);
+  color: var(--fl-text-primary);
+  border-color: var(--fl-border-strong);
 }
+
 .btn-secondary:hover:not(:disabled) {
-  background: #cbd5e1;
+  background: var(--fl-bg-secondary);
 }
 
 .btn-ghost {
   background: transparent;
-  color: #1a365d;
+  color: var(--fl-text-secondary);
 }
+
 .btn-ghost:hover:not(:disabled) {
-  background: #f1f5f9;
+  background: var(--fl-bg-tertiary);
+  color: var(--fl-text-primary);
+}
+
+.btn-danger {
+  background: var(--fl-error);
+  color: var(--fl-text-on-accent);
+  border-color: var(--fl-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #B91C1C;
+  border-color: #B91C1C;
 }
 
 /* Sizes */
 .btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 3px 11px;
+  font-size: var(--fl-text-xs);
+  height: 28px;
 }
+
 .btn-md {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
+  padding: 7px 15px;
+  font-size: var(--fl-text-sm);
+  height: 36px;
 }
+
 .btn-lg {
-  padding: 0.75rem 1.5rem;
-  font-size: 1.125rem;
+  padding: 11px 23px;
+  font-size: var(--fl-text-base);
+  height: 44px;
+}
+
+/* Spinner */
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btn-spin 600ms linear infinite;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
 }
