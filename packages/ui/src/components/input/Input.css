@@ -1,0 +1,62 @@
+/* ==========================================================================
+   FitLog Input — Token-driven, focus-visible, production standard
+   ========================================================================== */
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: var(--fl-text-sm);
+  font-weight: var(--fl-font-medium);
+  color: var(--fl-text-primary);
+}
+
+.input-group input {
+  height: 36px;
+  padding: 7px 11px;
+  font-family: var(--fl-font-sans);
+  font-size: var(--fl-text-sm);
+  color: var(--fl-text-primary);
+  background: var(--fl-bg-primary);
+  border: 1px solid var(--fl-border-strong);
+  border-radius: var(--fl-radius-md);
+  transition:
+    border-color var(--fl-transition-normal),
+    box-shadow var(--fl-transition-normal);
+}
+
+.input-group input:hover {
+  border-color: var(--fl-text-tertiary);
+}
+
+.input-group input:focus-visible {
+  outline: none;
+  border-color: var(--fl-border-focus);
+  box-shadow: 0 0 0 3px var(--fl-accent-subtle);
+}
+
+.input-group input::placeholder {
+  color: var(--fl-text-tertiary);
+}
+
+.input-group input:disabled {
+  background: var(--fl-bg-secondary);
+  color: var(--fl-text-tertiary);
+  cursor: not-allowed;
+}
+
+.input-error input {
+  border-color: var(--fl-error);
+}
+
+.input-error input:focus-visible {
+  box-shadow: 0 0 0 3px var(--fl-error-bg);
+}
+
+.error-message {
+  font-size: var(--fl-text-xs);
+  color: var(--fl-error);
+}

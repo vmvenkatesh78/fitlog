@@ -1,0 +1,139 @@
+.food-app {
+  padding: var(--fl-space-4);
+}
+
+.food-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--fl-space-6);
+}
+
+.food-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-space-2);
+  font-size: var(--fl-text-xl);
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-text-primary);
+}
+
+.food-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--fl-space-3);
+  margin-bottom: var(--fl-space-6);
+}
+
+@media (max-width: 640px) {
+  .food-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.macro-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--fl-space-2) 0;
+}
+
+.macro-value {
+  font-size: var(--fl-text-2xl);
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.macro-protein { color: var(--fl-success); }
+.macro-carbs { color: var(--fl-warning); }
+.macro-fat { color: #8B5CF6; }
+
+.macro-label {
+  font-size: var(--fl-text-xs);
+  color: var(--fl-text-tertiary);
+  margin-top: var(--fl-space-1);
+}
+
+.food-meals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-space-3);
+}
+
+.meal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meal-info strong {
+  font-weight: var(--fl-font-medium);
+  color: var(--fl-text-primary);
+}
+
+.meal-time {
+  font-size: var(--fl-text-xs);
+  color: var(--fl-text-tertiary);
+}
+
+.meal-macros {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meal-macros span:first-child {
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.meal-macro-detail {
+  font-size: var(--fl-text-xs);
+  color: var(--fl-text-tertiary);
+}
+
+.meal-form-card {
+  margin-bottom: var(--fl-space-6);
+}
+
+.meal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-space-4);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fl-space-3);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--fl-space-2);
+  margin-top: var(--fl-space-2);
+}
+
+.form-error {
+  font-size: var(--fl-text-sm);
+  color: var(--fl-error);
+  padding: var(--fl-space-2) var(--fl-space-3);
+  background: var(--fl-error-bg);
+  border-radius: var(--fl-radius-md);
+}
+
+.empty-state {
+  color: var(--fl-text-tertiary);
+  text-align: center;
+  padding: var(--fl-space-8);
+}
