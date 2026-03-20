@@ -49,6 +49,7 @@ export function once<T = unknown>(event: string, callback: EventCallback<T>): ()
 export const Events = {
   // Workout events
   WORKOUT_LOGGED: 'workout:logged',
+  WORKOUT_UPDATED: 'workout:updated',
   WORKOUT_DELETED: 'workout:deleted',
   
   // Food events
