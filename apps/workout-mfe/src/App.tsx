@@ -1,52 +1,29 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button, Card, CardHeader, CardBody, Input } from '@fitlog/ui';
 import { Dumbbell, Plus, Check } from '@fitlog/icons';
-import { emit, Events } from '@fitlog/utils';
-
-interface Workout {
-  id: string;
-  exercise: string;
-  sets: number;
-  reps: number;
-  calories: number;
-  timestamp: Date;
-}
+import { emit, Events, formatRelativeTime } from '@fitlog/utils';
+import { getWorkouts, saveWorkout } from '@fitlog/api';
+import type { Workout } from '@fitlog/api';
+import './index.css';
 
 function WorkoutApp() {
-  const [workouts, setWorkouts] = useState<Workout[]>(() => {
-    const saved = localStorage.getItem('fitlog-workouts');
-    if (!saved) return [];
-    
-    // Parse and convert timestamp strings back to Date objects
-    return JSON.parse(saved).map((w: Workout) => ({
-      ...w,
-      timestamp: new Date(w.timestamp),
-    }));
-  });
+  const [workouts, setWorkouts] = useState<Workout[]>(() => getWorkouts());
   const [showForm, setShowForm] = useState(false);
 
-  const handleLogWorkout = (workout: Omit<Workout, 'id' | 'timestamp'>) => {
-    const newWorkout: Workout = {
-      ...workout,
-      id: Date.now().toString(),
-      timestamp: new Date(),
-    };
+  const handleLogWorkout = useCallback(
+    (data: Omit<Workout, 'id' | 'timestamp'>) => {
+      const newWorkout = saveWorkout(data);
+      setWorkouts((prev) => [newWorkout, ...prev]);
+      setShowForm(false);
 
-    // Save to state
-    const updatedWorkouts = [newWorkout, ...workouts];
-    setWorkouts(updatedWorkouts);
-    setShowForm(false);
-
-    // Persist to localStorage
-    localStorage.setItem('fitlog-workouts', JSON.stringify(updatedWorkouts));
-
-    // Emit event to notify other MFEs
-    emit(Events.WORKOUT_LOGGED, {
-      exercise: workout.exercise,
-      sets: workout.sets,
-      reps: workout.reps,
-    });
-  };
+      emit(Events.WORKOUT_LOGGED, {
+        exercise: data.exercise,
+        sets: data.sets,
+        reps: data.reps,
+      });
+    },
+    [],
+  );
 
   return (
     <div className="workout-app">
@@ -54,7 +31,7 @@ function WorkoutApp() {
         <h2><Dumbbell size={24} /> My Workouts</h2>
         <Button variant="primary" onClick={() => setShowForm(true)}>
           <Plus size={18} />
-          New Workout
+          New workout
         </Button>
       </div>
 
@@ -69,21 +46,29 @@ function WorkoutApp() {
         {workouts.length === 0 ? (
           <Card>
             <CardBody>
-              <p className="empty-state">No workouts yet. Log your first workout!</p>
+              <div className="empty-state">
+                <p>No workouts logged yet. Start your first session.</p>
+              </div>
             </CardBody>
           </Card>
         ) : (
           workouts.map((workout) => (
-            <Card key={workout.id}>
-              <CardHeader>
-                <strong>{workout.exercise}</strong>
-                <span className="workout-date">
-                  {workout.timestamp.toLocaleTimeString()}
-                </span>
-              </CardHeader>
+            <Card key={workout.id} padding="sm">
               <CardBody>
-                <p>{workout.sets} sets × {workout.reps} reps</p>
-                <p className="workout-calories">{workout.calories} cal burned</p>
+                <div className="workout-row">
+                  <div className="workout-info">
+                    <strong>{workout.exercise}</strong>
+                    <span className="workout-detail">
+                      {workout.sets} sets x {workout.reps} reps
+                    </span>
+                  </div>
+                  <div className="workout-meta">
+                    <span className="workout-calories">{workout.calories} cal</span>
+                    <span className="workout-time">
+                      {formatRelativeTime(workout.timestamp)}
+                    </span>
+                  </div>
+                </div>
               </CardBody>
             </Card>
           ))
@@ -94,7 +79,7 @@ function WorkoutApp() {
 }
 
 interface WorkoutFormProps {
-  onSubmit: (workout: Omit<Workout, 'id' | 'timestamp'>) => void;
+  onSubmit: (data: Omit<Workout, 'id' | 'timestamp'>) => void;
   onCancel: () => void;
 }
 
@@ -102,32 +87,58 @@ function WorkoutForm({ onSubmit, onCancel }: WorkoutFormProps) {
   const [exercise, setExercise] = useState('');
   const [sets, setSets] = useState('3');
   const [reps, setReps] = useState('10');
-  const [calories, setCalories] = useState('50');
+  const [calories, setCalories] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!exercise.trim()) return;
 
+    if (!exercise.trim()) {
+      setError('Exercise name is required');
+      return;
+    }
+
+    const setsNum = parseInt(sets);
+    const repsNum = parseInt(reps);
+    const calNum = parseInt(calories);
+
+    if (isNaN(setsNum) || setsNum <= 0) {
+      setError('Enter a valid number of sets');
+      return;
+    }
+
+    if (isNaN(repsNum) || repsNum <= 0) {
+      setError('Enter a valid number of reps');
+      return;
+    }
+
+    if (isNaN(calNum) || calNum <= 0) {
+      setError('Enter calories burned');
+      return;
+    }
+
+    setError('');
     onSubmit({
       exercise: exercise.trim(),
-      sets: parseInt(sets) || 0,
-      reps: parseInt(reps) || 0,
-      calories: parseInt(calories) || 0,
+      sets: setsNum,
+      reps: repsNum,
+      calories: calNum,
     });
   };
 
   return (
     <Card className="workout-form-card">
       <CardHeader>
-        <strong>Log Workout</strong>
+        <strong>Log workout</strong>
       </CardHeader>
       <CardBody>
         <form onSubmit={handleSubmit} className="workout-form">
+          {error && <p className="form-error">{error}</p>}
           <Input
             label="Exercise"
             value={exercise}
             onChange={(e) => setExercise(e.target.value)}
-            placeholder="e.g., Squats, Bench Press"
+            placeholder="e.g., Squats, Bench press"
           />
           <div className="form-row">
             <Input
@@ -147,6 +158,7 @@ function WorkoutForm({ onSubmit, onCancel }: WorkoutFormProps) {
               type="number"
               value={calories}
               onChange={(e) => setCalories(e.target.value)}
+              placeholder="e.g., 150"
             />
           </div>
           <div className="form-actions">
@@ -155,7 +167,7 @@ function WorkoutForm({ onSubmit, onCancel }: WorkoutFormProps) {
             </Button>
             <Button type="submit" variant="primary">
               <Check size={18} />
-              Log Workout
+              Log workout
             </Button>
           </div>
         </form>

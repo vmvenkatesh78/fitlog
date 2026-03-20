@@ -14,31 +14,36 @@ function Header() {
   return (
     <header className="header">
       <div className="header-brand">
-        <Link to="/home">🏋️ FitLog</Link>
+        <Link to="/home">
+          <Dumbbell size={20} />
+          <span>FitLog</span>
+        </Link>
       </div>
       <nav className="header-nav">
         <Link to="/workout" className={isActive('/workout') ? 'active' : ''}>
-          <Dumbbell size={18} />
+          <Dumbbell size={16} />
           Workout
         </Link>
         <Link to="/food" className={isActive('/food') ? 'active' : ''}>
-          <Apple size={18} />
+          <Apple size={16} />
           Food
         </Link>
         <Link to="/analytics" className={isActive('/analytics') ? 'active' : ''}>
-          <ChartBar size={18} />
+          <ChartBar size={16} />
           Analytics
         </Link>
       </nav>
-      <div className="header-user">
-        <User size={18} />
-        <span>{user.name}</span>
+      <div className="header-actions">
+        <div className="header-user">
+          <User size={16} />
+          <span>{user.name}</span>
+        </div>
         <button
           className="theme-toggle"
           onClick={() => dispatch(toggleTheme())}
-          title={`Switch to ${preferences.theme === 'light' ? 'dark' : 'light'} mode`}
+          aria-label={`Switch to ${preferences.theme === 'light' ? 'dark' : 'light'} mode`}
         >
-          <Settings size={18} />
+          <Settings size={16} />
         </button>
       </div>
     </header>
