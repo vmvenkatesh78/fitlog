@@ -1,79 +1,64 @@
-# FitLog 🏋️
+# FitLog
 
-A production-grade fitness tracking app built with **Micro Frontend architecture** — demonstrating MFE patterns, design tokens, web components, TDD, and modern frontend practices.
+A fitness tracking app built with **Micro Frontend architecture** — three independent modules (workout logging, food tracking, analytics) that communicate through events and share a design-token-driven UI system.
 
-## 🎯 What is This?
+## The Problem
 
-FitLog is a learning project that implements real-world MFE architecture patterns used by companies like Amazon, IKEA, and Spotify. It's designed to be a reference for developers wanting to understand how to build scalable frontend applications.
+Fitness tracking is fragmented — workouts in one app, food in another, progress analytics nowhere. FitLog solves this with a single app where three independent modules share data through events and a common design system. The architecture demonstrates how teams scale frontend development independently: each module can be developed, tested, and deployed without touching the others.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                        SHELL                            │
 │              (Host App - Port 3000)                     │
-│         Routing • Auth • Theme • Navigation             │
+│     Routing · Auth · Theme · Navigation · Dashboard     │
 ├─────────────────────────────────────────────────────────┤
 │                  MODULE FEDERATION                       │
 ├───────────────┬───────────────┬─────────────────────────┤
 │  Workout MFE  │   Food MFE    │    Analytics MFE        │
 │  (Port 3001)  │  (Port 3002)  │     (Port 3003)         │
+│               │               │                         │
+│  Log sets,    │  Log meals,   │  Daily/weekly stats,    │
+│  reps, cals   │  macros       │  CSS bar chart          │
 └───────────────┴───────────────┴─────────────────────────┘
           │               │               │
           └───────────────┴───────────────┘
                           │
-              ┌───────────┴───────────┐
-              │   SHARED PACKAGES     │
-              │  @fitlog/ui           │
-              │  @fitlog/icons        │
-              │  @fitlog/utils        │
-              └───────────────────────┘
+              ┌───────────┴───────────────┐
+              │     SHARED PACKAGES       │
+              │  @fitlog/ui   @fitlog/api  │
+              │  @fitlog/icons             │
+              │  @fitlog/utils             │
+              └───────────────────────────┘
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
 | Framework | React 18 |
 | Build Tool | Vite 7 |
 | Module Federation | @originjs/vite-plugin-federation |
-| State Management | Redux Toolkit (Shell only) |
+| State Management | Redux Toolkit (Shell global), useState (MFE local) |
 | Routing | React Router v6 |
-| Language | TypeScript |
+| Language | TypeScript (strict mode) |
+| Styling | CSS Custom Properties (design tokens) |
 | Monorepo | npm workspaces |
+| CI | GitHub Actions (lint + build) |
 
-## 📁 Project Structure
-
-```
-fitlog/
-├── apps/
-│   ├── shell/              # Host application
-│   ├── workout-mfe/        # Workout micro frontend
-│   ├── food-mfe/           # Food tracking micro frontend
-│   └── analytics-mfe/      # Analytics dashboard micro frontend
-├── packages/
-│   ├── ui/                 # Shared UI components
-│   ├── icons/              # Shared icon components
-│   └── utils/              # Shared utilities (event bus, formatters)
-├── docs/                   # Documentation
-└── package.json            # Workspace configuration
-```
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm 9+
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/vmvenkatesh78/fitlog.git
 cd fitlog
-
-# Install dependencies
 npm install
 ```
 
@@ -97,31 +82,59 @@ npm run dev -w apps/shell
 
 Open http://localhost:3000
 
-### Why Build + Preview for MFEs?
+MFEs require `build + preview` because Vite's dev mode doesn't generate `remoteEntry.js` (required for Module Federation). For faster iteration on a single MFE, run it standalone: `npm run dev -w apps/workout-mfe`.
 
-Vite's dev mode doesn't generate `remoteEntry.js` (required for Module Federation). MFEs must be built first, then served via preview mode.
+## Project Structure
 
-### Standalone MFE Development
-
-For faster iteration on a single MFE:
-
-```bash
-npm run dev -w apps/workout-mfe
-# Open http://localhost:3001
+```
+fitlog/
+├── apps/
+│   ├── shell/              # Host — routing, auth, theme, dashboard
+│   ├── workout-mfe/        # Workout logging (sets, reps, calories)
+│   ├── food-mfe/           # Food tracking (meals, calories, macros)
+│   └── analytics-mfe/      # Analytics dashboard (stats, weekly chart)
+├── packages/
+│   ├── ui/                 # Shared UI components + design tokens
+│   ├── icons/              # SVG icon components
+│   ├── utils/              # Event bus + formatters
+│   └── api/                # Typed localStorage abstraction
+├── docs/                   # Architecture, decisions, guides
+└── package.json            # Workspace configuration
 ```
 
-## 📦 Shared Packages
+## Shared Packages
 
 ### @fitlog/ui
 
-Reusable UI components:
+Design-token-driven UI components:
 
 ```tsx
-import { Button, Card, Input } from '@fitlog/ui';
+import { Button, Card, CardHeader, CardBody, Input, ErrorBoundary } from '@fitlog/ui';
+```
 
-<Button variant="primary" size="lg">Click me</Button>
-<Card><p>Content</p></Card>
-<Input label="Email" error="Invalid email" />
+All components use CSS custom properties defined in `tokens.css`. Light and dark themes switch via `data-theme="dark"` on the root element.
+
+### @fitlog/api
+
+Typed localStorage abstraction — centralizes data access, handles serialization errors, provides domain types:
+
+```tsx
+import { getWorkouts, saveWorkout, getMeals, saveMeal, getDailySummary } from '@fitlog/api';
+import type { Workout, Meal, DailySummary } from '@fitlog/api';
+```
+
+### @fitlog/utils
+
+Cross-MFE event bus (DOM CustomEvents) and formatters:
+
+```tsx
+import { emit, on, Events, formatCalories, formatRelativeTime } from '@fitlog/utils';
+
+emit(Events.WORKOUT_LOGGED, { exercise: 'Squat', sets: 3 });
+
+on(Events.WORKOUT_LOGGED, (data) => {
+  // Analytics MFE updates in real-time
+});
 ```
 
 ### @fitlog/icons
@@ -130,83 +143,53 @@ SVG icons as React components:
 
 ```tsx
 import { Dumbbell, Apple, ChartBar } from '@fitlog/icons';
-
-<Dumbbell size={24} />
 ```
 
-### @fitlog/utils
+## Cross-MFE Communication
 
-Utilities for cross-MFE communication and formatting:
+Two patterns combined:
 
-```tsx
-import { emit, on, Events, formatDate, formatCalories } from '@fitlog/utils';
+- **Event bus** — real-time updates when both MFEs are mounted (workout logged → analytics count updates)
+- **localStorage via @fitlog/api** — persistence across navigation (data survives page transitions)
 
-// Event bus - cross-MFE communication
-emit(Events.WORKOUT_LOGGED, { exercise: 'Squat', sets: 3 });
+Each MFE owns its domain data. No shared Redux between MFEs. Shell Redux holds only global concerns (auth, user, theme preferences).
 
-on(Events.WORKOUT_LOGGED, (data) => {
-  console.log('Workout logged:', data);
-});
+## Design Decisions
 
-// Formatters
-formatDate(new Date());     // "Dec 31, 2025"
-formatCalories(1500);       // "1,500 cal"
-```
+All architectural decisions are documented as ADRs in [docs/decisions.md](docs/decisions.md):
 
-## 📚 Documentation
+- ADR-001: Monorepo vs polyrepo
+- ADR-002: Build tool selection (Vite)
+- ADR-003: State management strategy
+- ADR-004: Cross-MFE communication (event bus + localStorage)
+- ADR-005: Shared packages structure
+- ADR-006: Module Federation plugin
+- ADR-007: Styling approach (CSS custom properties)
+- ADR-008: Development workflow
+- ADR-009: Cross-MFE data persistence
+- ADR-010: ESLint 9 configuration
+- ADR-011: Form field design
+
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](docs/Architecture.md) | System design and how everything fits together |
-| [DECISIONS.md](docs/Decisions.md) | Architecture Decision Records (ADRs) |
-| [COMPLETE_GUIDE.md](docs/CompleteGuide.md) | Beginner-friendly guide to every file |
-| [LEARNING_JOURNEY.md](docs/LearningJourney.md) | Questions, problems, and solutions |
-| [COMMUNICATION.md](docs/Communication.md) | Cross-MFE communication patterns |
+| [Architecture](docs/Architecture.md) | System design and how everything fits together |
+| [Decisions](docs/decisions.md) | Architecture Decision Records |
+| [Communication](docs/Communication.md) | Cross-MFE event bus patterns |
+| [Complete Guide](docs/CompleteGuide.md) | Beginner-friendly walkthrough |
+| [Learning Journey](docs/LearningJourney.md) | Problems encountered and solutions |
 
-## 🗺️ Roadmap
+## Key Patterns Demonstrated
 
-### Completed ✅
+- **Micro Frontend architecture** with Module Federation runtime loading
+- **Event-driven communication** between independent modules (no shared state abuse)
+- **Design tokens** as CSS custom properties with light/dark theme support
+- **Monorepo with npm workspaces** — shared packages, single dependency tree
+- **ErrorBoundary wrapping** for resilient remote MFE loading
+- **Typed data access layer** centralizing localStorage with error handling
+- **Four-state async pattern** — loading, error, empty, success states in every view
 
-- [x] Monorepo setup with npm workspaces
-- [x] Shell app with routing and Redux
-- [x] Shared packages (ui, icons, utils)
-- [x] Workout MFE with Module Federation
-- [x] Food MFE
-- [x] Analytics MFE
-- [x] Cross-MFE event communication
-- [x] localStorage persistence
-- [x] ESLint 9 configuration
+## License
 
-### In Progress 🚧
-
-- [ ] Design Tokens integration
-- [ ] More workout features
-- [ ] Food logging functionality
-
-### Planned 📋
-
-- [ ] Web Components exploration
-- [ ] TDD implementation
-- [ ] Performance optimization
-- [ ] Deployment to Vercel
-
-## 🔑 Key Achievement
-
-> "A workout logged in one MFE updates analytics in another MFE without shared state."
-
-This proves:
-- Loose coupling between MFEs
-- No shared Redux abuse
-- Real-world MFE interaction pattern
-
-## 🤝 Contributing
-
-This is a learning project, but suggestions and improvements are welcome!
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-Built with ❤️ as part of a 12-week frontend architecture learning journey.
+MIT License — see [LICENSE](LICENSE) for details.
