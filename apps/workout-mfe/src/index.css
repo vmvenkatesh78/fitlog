@@ -1,0 +1,102 @@
+.workout-app {
+  padding: var(--fl-space-4);
+}
+
+.workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--fl-space-6);
+}
+
+.workout-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-space-2);
+  font-size: var(--fl-text-xl);
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-text-primary);
+}
+
+.workout-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-space-3);
+}
+
+.workout-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.workout-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workout-info strong {
+  font-weight: var(--fl-font-medium);
+  color: var(--fl-text-primary);
+}
+
+.workout-detail {
+  font-size: var(--fl-text-sm);
+  color: var(--fl-text-secondary);
+}
+
+.workout-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workout-calories {
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-success);
+  font-variant-numeric: tabular-nums;
+}
+
+.workout-time {
+  font-size: var(--fl-text-xs);
+  color: var(--fl-text-tertiary);
+}
+
+.workout-form-card {
+  margin-bottom: var(--fl-space-6);
+}
+
+.workout-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-space-4);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fl-space-3);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--fl-space-2);
+  margin-top: var(--fl-space-2);
+}
+
+.form-error {
+  font-size: var(--fl-text-sm);
+  color: var(--fl-error);
+  padding: var(--fl-space-2) var(--fl-space-3);
+  background: var(--fl-error-bg);
+  border-radius: var(--fl-radius-md);
+}
+
+.empty-state {
+  color: var(--fl-text-tertiary);
+  text-align: center;
+  padding: var(--fl-space-8);
+}

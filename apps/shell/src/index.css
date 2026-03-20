@@ -1,68 +1,194 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ==========================================================================
+   FitLog Shell Styles
+   Imports tokens and global from @fitlog/ui.
+   Dark theme handled by [data-theme="dark"] on .app element.
+   ========================================================================== */
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background: #f5f5f5;
-  color: #333;
-}
+@import '@fitlog/ui/src/styles/tokens.css';
+@import '@fitlog/ui/src/styles/global.css';
 
+/* ---- App Layout ---- */
 .app {
   min-height: 100vh;
+  background: var(--fl-bg-secondary);
+  color: var(--fl-text-primary);
 }
 
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--fl-space-6) var(--fl-space-4);
+}
+
+/* ---- Header ---- */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 2rem;
-  background: #1a365d;
-  color: white;
+  padding: 0 var(--fl-space-6);
+  height: 48px;
+  background: var(--fl-bg-primary);
+  border-bottom: 1px solid var(--fl-border);
 }
 
 .header-brand a {
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: var(--fl-space-2);
+  color: var(--fl-text-primary);
   text-decoration: none;
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: var(--fl-text-base);
+  font-weight: var(--fl-font-semibold);
 }
 
 .header-nav {
   display: flex;
-  gap: 2rem;
+  gap: var(--fl-space-1);
 }
 
 .header-nav a {
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: var(--fl-space-1);
+  padding: var(--fl-space-2) var(--fl-space-3);
+  border-radius: var(--fl-radius-md);
+  color: var(--fl-text-secondary);
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background 0.2s;
+  font-size: var(--fl-text-sm);
+  font-weight: var(--fl-font-normal);
+  transition: background-color var(--fl-transition-fast),
+              color var(--fl-transition-fast);
 }
 
 .header-nav a:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--fl-bg-secondary);
+  color: var(--fl-text-primary);
+}
+
+.header-nav a.active {
+  background: var(--fl-accent-subtle);
+  color: var(--fl-accent);
+  font-weight: var(--fl-font-medium);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-space-3);
 }
 
 .header-user {
-  font-size: 0.9rem;
-  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: var(--fl-space-2);
+  font-size: var(--fl-text-sm);
+  color: var(--fl-text-secondary);
 }
 
-.main {
-  padding: 2rem;
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--fl-border);
+  border-radius: var(--fl-radius-md);
+  color: var(--fl-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--fl-transition-fast),
+              color var(--fl-transition-fast);
 }
 
+.theme-toggle:hover {
+  background: var(--fl-bg-tertiary);
+  color: var(--fl-text-primary);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--fl-border-focus);
+  outline-offset: 2px;
+}
+
+/* ---- Home Dashboard ---- */
 .home {
   text-align: center;
-  padding: 4rem 2rem;
+  padding: var(--fl-space-8) 0;
 }
 
-.home h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #1a365d;
+.home-title {
+  font-size: var(--fl-text-2xl);
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-text-primary);
+  margin-bottom: var(--fl-space-6);
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--fl-space-3);
+  max-width: 640px;
+  margin: 0 auto var(--fl-space-8);
+}
+
+@media (max-width: 640px) {
+  .home-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--fl-space-4);
+  background: var(--fl-bg-elevated);
+  border: 1px solid var(--fl-border);
+  border-radius: var(--fl-radius-lg);
+}
+
+.home-card-value {
+  font-size: var(--fl-text-2xl);
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-card-burned { color: var(--fl-success); }
+.home-card-consumed { color: var(--fl-warning); }
+
+.home-card-label {
+  font-size: var(--fl-text-xs);
+  color: var(--fl-text-tertiary);
+  margin-top: var(--fl-space-1);
+}
+
+.home-hint {
+  font-size: var(--fl-text-sm);
+  color: var(--fl-text-tertiary);
+}
+
+/* ---- Loading State ---- */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fl-space-3);
+  padding: var(--fl-space-12);
+  color: var(--fl-text-tertiary);
+  font-size: var(--fl-text-sm);
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--fl-border);
+  border-top-color: var(--fl-accent);
+  border-radius: 50%;
+  animation: spin 600ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

@@ -1,0 +1,60 @@
+/* ==========================================================================
+   FitLog Global Styles
+   
+   Reset, base typography, and global utilities.
+   Import tokens.css before this file.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color-scheme: light dark;
+}
+
+body {
+  font-family: var(--fl-font-sans);
+  font-size: var(--fl-text-sm);
+  line-height: var(--fl-leading-normal);
+  color: var(--fl-text-primary);
+  background: var(--fl-bg-secondary);
+}
+
+::selection {
+  background: var(--fl-accent-subtle-hover);
+  color: var(--fl-text-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fl-border-strong);
+  border-radius: 3px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

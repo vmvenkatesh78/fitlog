@@ -1,0 +1,112 @@
+/* ==========================================================================
+   FitLog Button — Token-driven, production UI standard compliant
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fl-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--fl-radius-md);
+  font-family: var(--fl-font-sans);
+  font-weight: var(--fl-font-medium);
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    background-color var(--fl-transition-normal),
+    color var(--fl-transition-normal),
+    border-color var(--fl-transition-normal);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--fl-border-focus);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Variants */
+.btn-primary {
+  background: var(--fl-accent);
+  color: var(--fl-text-on-accent);
+  border-color: var(--fl-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--fl-accent-hover);
+  border-color: var(--fl-accent-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--fl-accent-active);
+}
+
+.btn-secondary {
+  background: var(--fl-bg-primary);
+  color: var(--fl-text-primary);
+  border-color: var(--fl-border-strong);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--fl-bg-secondary);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fl-text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--fl-bg-tertiary);
+  color: var(--fl-text-primary);
+}
+
+.btn-danger {
+  background: var(--fl-error);
+  color: var(--fl-text-on-accent);
+  border-color: var(--fl-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #B91C1C;
+  border-color: #B91C1C;
+}
+
+/* Sizes */
+.btn-sm {
+  padding: 3px 11px;
+  font-size: var(--fl-text-xs);
+  height: 28px;
+}
+
+.btn-md {
+  padding: 7px 15px;
+  font-size: var(--fl-text-sm);
+  height: 36px;
+}
+
+.btn-lg {
+  padding: 11px 23px;
+  font-size: var(--fl-text-base);
+  height: 44px;
+}
+
+/* Spinner */
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btn-spin 600ms linear infinite;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}

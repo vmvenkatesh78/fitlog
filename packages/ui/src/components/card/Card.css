@@ -1,0 +1,38 @@
+/* ==========================================================================
+   FitLog Card — Border, not shadow. Token-driven.
+   ========================================================================== */
+
+.card {
+  background: var(--fl-bg-elevated);
+  border: 1px solid var(--fl-border);
+  border-radius: var(--fl-radius-lg);
+}
+
+.card-padding-none { padding: 0; }
+.card-padding-sm { padding: var(--fl-space-3); }
+.card-padding-md { padding: var(--fl-space-4); }
+.card-padding-lg { padding: var(--fl-space-6); }
+
+.card-header {
+  padding-bottom: var(--fl-space-3);
+  border-bottom: 1px solid var(--fl-border);
+  margin-bottom: var(--fl-space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header strong {
+  font-weight: var(--fl-font-semibold);
+  color: var(--fl-text-primary);
+}
+
+.card-body {
+  flex: 1;
+}
+
+.card-footer {
+  padding-top: var(--fl-space-3);
+  border-top: 1px solid var(--fl-border);
+  margin-top: var(--fl-space-3);
+}
